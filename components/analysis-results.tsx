@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Check, Copy, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { Check, Copy, AlertCircle, CheckCircle2, Download } from 'lucide-react'
 import { InteractiveCard3D } from '@/components/3d/interactive-card-3d'
+import { generateAnalysisPDF } from '@/src/lib/exportPdf'
 
 interface AnalysisResultsProps {
   data: any
@@ -13,11 +14,25 @@ interface AnalysisResultsProps {
 export function AnalysisResults({ data, onBack }: AnalysisResultsProps) {
   const [activeTab, setActiveTab] = useState<'summary' | 'conflicts' | 'action-items' | 'knowledge'>('summary')
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [isExporting, setIsExporting] = useState(false)
 
   const copyToClipboard = (text: string, id: string) => {
     navigator.clipboard.writeText(text)
     setCopiedId(id)
     setTimeout(() => setCopiedId(null), 2000)
+  }
+
+  const handleExport = async () => {
+    try {
+      setIsExporting(true)
+      // Small timeout to allow UI to update to "Generating..."
+      await new Promise(resolve => setTimeout(resolve, 100))
+      generateAnalysisPDF(data)
+    } catch (error) {
+      console.error('Failed to generate PDF:', error)
+    } finally {
+      setIsExporting(false)
+    }
   }
 
   const TABS = [
@@ -30,9 +45,19 @@ export function AnalysisResults({ data, onBack }: AnalysisResultsProps) {
   return (
     <div>
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">{data.summary.split('.')[0]}</h1>
-        <p className="text-muted-foreground text-sm">Analysis completed on {new Date().toLocaleDateString()}</p>
+      <div className="mb-8 flex justify-between items-start">
+        <div className="pr-4">
+          <h1 className="text-3xl font-bold mb-2 leading-tight">{data.summary.split('.')[0]}</h1>
+          <p className="text-muted-foreground text-sm">Analysis completed on {data.createdAt ? new Date(data.createdAt).toLocaleDateString() : new Date().toLocaleDateString()}</p>
+        </div>
+        <Button onClick={handleExport} disabled={isExporting} variant="outline">
+          {isExporting ? 'Generating...' : (
+            <>
+              <Download className="w-4 h-4 mr-2" />
+              Export PDF
+            </>
+          )}
+        </Button>
       </div>
 
       {/* Tabs */}
