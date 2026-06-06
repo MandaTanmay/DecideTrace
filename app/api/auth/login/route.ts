@@ -8,9 +8,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { comparePassword, generateToken } from '@/lib/auth'
 import { getUsersCollection, toSafeUser } from '@/models/User'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
   try {
+    // ── Rate Limiting ─────────────────────────────────────────────────────
+    const ip = request.headers.get('x-forwarded-for') || '127.0.0.1'
+    if (checkRateLimit(`login_${ip}`, 5, 60 * 1000)) { // 5 attempts per minute
+      return NextResponse.json(
+        { message: 'Too many login attempts. Please try again in a minute.' },
+        { status: 429 }
+      )
+    }
+
     const body = await request.json()
     const { email, password } = body
 
@@ -33,12 +43,10 @@ export async function POST(request: NextRequest) {
     const users = await getUsersCollection()
     const user = await users.findOne({ email: email.toLowerCase().trim() })
 
-    // Use the same error message for both "user not found" and "wrong password"
-    // to avoid leaking whether an email is registered
     if (!user) {
       return NextResponse.json(
-        { message: 'Invalid email or password.' },
-        { status: 401 }
+        { message: 'No account found with this email address.' },
+        { status: 404 }
       )
     }
 
@@ -46,7 +54,7 @@ export async function POST(request: NextRequest) {
     const isValid = await comparePassword(password, user.passwordHash)
     if (!isValid) {
       return NextResponse.json(
-        { message: 'Invalid email or password.' },
+        { message: 'Incorrect password.' },
         { status: 401 }
       )
     }
