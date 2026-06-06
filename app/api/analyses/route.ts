@@ -100,9 +100,12 @@ export async function GET(request: NextRequest) {
 
     const list = docs.map(toAnalysisListItem)
     return NextResponse.json({ analyses: list }, { status: 200 })
-  } catch (error) {
+  } catch (error: any) {
     console.error('[GET /api/analyses]', error)
-    return NextResponse.json({ message: 'An internal server error occurred.' }, { status: 500 })
+    return NextResponse.json(
+      { message: 'An internal server error occurred.', error: error?.message || String(error) }, 
+      { status: 500 }
+    )
   }
 }
 
