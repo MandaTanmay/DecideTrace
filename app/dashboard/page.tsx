@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { DashboardSidebar, Analysis } from '@/components/dashboard-sidebar'
+import { DashboardSidebar, Analysis, User } from '@/components/dashboard-sidebar'
 import { AnalysisForm } from '@/components/analysis-form'
 import { AnalysisResults } from '@/components/analysis-results'
 
@@ -12,13 +12,21 @@ export default function DashboardPage() {
   const [analyses, setAnalyses] = useState<Analysis[]>([])
   const [selectedAnalysisId, setSelectedAnalysisId] = useState<string | null>(null)
   const [analysisData, setAnalysisData] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
 
-  // Load analyses list on mount
+  // Load analyses list and user profile on mount
   useEffect(() => {
+    // Fetch analyses
     fetch('/api/analyses')
       .then(res => res.ok ? res.json() : Promise.reject(res))
       .then(data => setAnalyses(data.analyses ?? []))
       .catch(err => console.error('Failed to load analyses:', err))
+
+    // Fetch user profile
+    fetch('/api/auth/me')
+      .then(res => res.ok ? res.json() : Promise.reject(res))
+      .then(data => setUser(data.user ?? null))
+      .catch(err => console.error('Failed to load user profile:', err))
   }, [])
 
   const handleNewAnalysis = () => {
@@ -63,6 +71,7 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-background text-foreground flex">
       {/* Sidebar */}
       <DashboardSidebar
+        user={user}
         analyses={analyses}
         selectedAnalysisId={selectedAnalysisId}
         onSelectAnalysis={handleSelectAnalysis}

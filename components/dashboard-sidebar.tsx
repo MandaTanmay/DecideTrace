@@ -10,7 +10,13 @@ export interface Analysis {
   date: string
 }
 
+export interface User {
+  name: string
+  email: string
+}
+
 interface DashboardSidebarProps {
+  user?: User | null
   analyses: Analysis[]
   selectedAnalysisId: string | null
   onSelectAnalysis: (id: string) => void
@@ -18,6 +24,7 @@ interface DashboardSidebarProps {
 }
 
 export function DashboardSidebar({
+  user,
   analyses,
   selectedAnalysisId,
   onSelectAnalysis,
@@ -73,12 +80,14 @@ export function DashboardSidebar({
       {/* User Section */}
       <div className="p-4 border-t border-border space-y-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold">
-            JD
+          <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold shrink-0">
+            {user?.name 
+              ? user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() 
+              : '?'}
           </div>
-          <div className="flex-1">
-            <div className="text-sm font-medium">John Doe</div>
-            <div className="text-xs text-muted-foreground">john@example.com</div>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-medium truncate">{user?.name || 'Loading...'}</div>
+            <div className="text-xs text-muted-foreground truncate">{user?.email || ''}</div>
           </div>
         </div>
         <Button
