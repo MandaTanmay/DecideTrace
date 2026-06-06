@@ -8,9 +8,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { hashPassword, generateToken } from '@/lib/auth'
 import { getUsersCollection, toSafeUser } from '@/models/User'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
   try {
+    // ── Rate Limiting ─────────────────────────────────────────────────────
+    const ip = request.headers.get('x-forwarded-for') || '127.0.0.1'
+    if (checkRateLimit(`signup_${ip}`, 5, 60 * 1000)) { // 5 attempts per minute
+      return NextResponse.json(
+        { message: 'Too many signup attempts. Please try again in a minute.' },
+        { status: 429 }
+      )
+    }
+
     const body = await request.json()
     const { name, email, password } = body
 
@@ -29,9 +39,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!password || typeof password !== 'string' || password.length < 8) {
+    // ── Strict Password Validation ────────────────────────────────────────
+    const hasUpperCase = /[A-Z]/.test(password || '')
+    const hasNumber = /[0-9]/.test(password || '')
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password || '')
+    
+    if (!password || typeof password !== 'string' || password.length < 8 || !hasUpperCase || !hasNumber || !hasSpecialChar) {
       return NextResponse.json(
-        { message: 'Password must be at least 8 characters.' },
+        { message: 'Password must be at least 8 characters and include an uppercase letter, a number, and a special character.' },
         { status: 400 }
       )
     }
