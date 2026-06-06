@@ -16,9 +16,8 @@ export function ProgressSphere({ progress }: ProgressSphereProps) {
     groupRef.current.rotation.z += 0.005
   })
 
-  // Create progress ring
-  const segments = 64
-  const progressSegments = Math.floor(segments * progress)
+  // Create progress ring arc
+  const arc = Math.max(0.001, Math.PI * 2 * progress)
 
   return (
     <group ref={groupRef}>
@@ -30,7 +29,7 @@ export function ProgressSphere({ progress }: ProgressSphereProps) {
 
       {/* Progress ring */}
       <mesh>
-        <torusGeometry args={[1, 0.1, 16, progressSegments]} />
+        <torusGeometry args={[1, 0.1, 16, 64, arc]} />
         <meshPhongMaterial
           color="#22d3ee"
           emissive="#06b6d4"

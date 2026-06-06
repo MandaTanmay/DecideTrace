@@ -35,72 +35,60 @@ export function AnalysisForm({ onAnalysisComplete }: AnalysisFormProps) {
     setCompletedSteps([])
     setCurrentStep(1)
 
-    // Simulate analysis steps with delays
-    for (let i = 1; i <= ANALYSIS_STEPS.length; i++) {
-      await new Promise(resolve => setTimeout(resolve, 800))
-      setCompletedSteps(prev => [...prev, i])
-      if (i < ANALYSIS_STEPS.length) {
-        setCurrentStep(i + 1)
+    // Animate steps 1-2 immediately (agents 1 & 2 run in parallel at start)
+    setCurrentStep(1)
+
+    try {
+      // Run the real LangGraph pipeline — takes 15-30s
+      // Animate progress steps during the API call to show meaningful feedback
+      const animationPromise = (async () => {
+        // Steps 1 & 2 complete after ~3s (parallel embedding + analysis)
+        await new Promise(resolve => setTimeout(resolve, 3000))
+        setCompletedSteps([1])
+        setCurrentStep(2)
+        await new Promise(resolve => setTimeout(resolve, 500))
+        setCompletedSteps([1, 2])
+        setCurrentStep(3)
+        // Step 3 (conflict detection) takes longer — vector search + LLM per decision
+        await new Promise(resolve => setTimeout(resolve, 8000))
+        setCompletedSteps([1, 2, 3])
+        setCurrentStep(4)
+        // Steps 4 & 5 run in parallel
+        await new Promise(resolve => setTimeout(resolve, 5000))
+        setCompletedSteps([1, 2, 3, 4])
+        setCurrentStep(5)
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        setCompletedSteps([1, 2, 3, 4, 5])
+        setCurrentStep(6)
+      })()
+
+      const apiPromise = fetch('/api/analyses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcript, existingNotes: notes }),
+      })
+
+      const [response] = await Promise.all([apiPromise, animationPromise])
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Analysis failed')
       }
+
+      const data = await response.json()
+
+      // Mark all steps complete
+      setCompletedSteps([1, 2, 3, 4, 5, 6])
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      onAnalysisComplete(data)
+    } catch (error: any) {
+      console.error('Analysis error:', error)
+      alert(error.message || 'Analysis failed. Please check your API keys and try again.')
+    } finally {
+      setLoading(false)
+      setCurrentStep(null)
     }
-
-    // Simulate analysis completion and return mock data
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
-    onAnalysisComplete({
-      transcript,
-      notes,
-      summary: 'In this meeting, the team discussed Q1 priorities and made several key decisions regarding product roadmap and team structure. Key topics included feature prioritization, deadline discussions, and resource allocation.',
-      decisions: [
-        'Move mobile app redesign to Q2 instead of Q1',
-        'Hire 2 additional backend engineers by end of Q2',
-        'Implement new CI/CD pipeline by March 31st',
-        'Reduce API response time to under 200ms'
-      ],
-      conflicts: [
-        {
-          id: 1,
-          meetingDecision: 'We will complete the mobile redesign by end of Q1',
-          conflictingNote: 'Mobile redesign pushed to Q2 due to resource constraints',
-          confidence: 87,
-          explanation: 'Timeline mismatch: Meeting commits to Q1 completion, but existing notes indicate Q2 target.'
-        },
-        {
-          id: 2,
-          meetingDecision: 'API response time must be under 200ms',
-          conflictingNote: 'Current acceptable SLA is 500ms for API responses',
-          confidence: 92,
-          explanation: 'New requirement conflicts with previously documented performance SLA.'
-        },
-        {
-          id: 3,
-          meetingDecision: 'Team will expand by 2 backend engineers',
-          conflictingNote: 'Hiring freeze announced last month, no new positions approved',
-          confidence: 78,
-          explanation: 'Hiring decision contradicts recent company-wide hiring freeze policy.'
-        }
-      ],
-      actionItems: [
-        { task: 'Schedule design sprint for mobile app', owner: 'Sarah Chen', deadline: '2024-02-15', priority: 'High' },
-        { task: 'Prepare job descriptions for backend roles', owner: 'Mike Johnson', deadline: '2024-02-28', priority: 'High' },
-        { task: 'Benchmark current API response times', owner: 'Alex Rodriguez', deadline: '2024-02-10', priority: 'Medium' },
-        { task: 'Document new CI/CD pipeline requirements', owner: 'Emma Davis', deadline: '2024-02-20', priority: 'Medium' },
-        { task: 'Review and update team capacity planning', owner: 'Sarah Chen', deadline: '2024-02-28', priority: 'Low' }
-      ],
-      knowledgeGaps: [
-        {
-          topic: 'Q2 Budget Allocation',
-          suggestion: 'Add details about how budget was allocated across different departments and projects for Q2.'
-        },
-        {
-          topic: 'Risk Assessment',
-          suggestion: 'Document potential risks identified during the meeting, especially around the accelerated timeline.'
-        }
-      ]
-    })
-
-    setLoading(false)
-    setCurrentStep(null)
   }
 
   return (

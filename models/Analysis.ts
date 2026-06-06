@@ -1,0 +1,99 @@
+/**
+ * models/Analysis.ts
+ *
+ * TypeScript interfaces for the MongoDB analyses collection document.
+ * Stores all LangGraph pipeline results per user.
+ */
+
+import { ObjectId, type Collection } from 'mongodb'
+import { getDB } from '@/lib/mongodb'
+
+// ---------------------------------------------------------------------------
+// Sub-document types
+// ---------------------------------------------------------------------------
+
+export interface ConflictResult {
+  decision: string
+  contradictingNote: string
+  confidence: number          // 0.0 – 1.0
+  explanation: string
+}
+
+export interface ActionItem {
+  task: string
+  owner: string
+  deadline: string
+  priority: 'High' | 'Medium' | 'Low'
+}
+
+export interface KnowledgeUpdate {
+  topic: string
+  suggestedNote: string
+}
+
+export interface MeetingAnalysisResult {
+  summary: string
+  decisions: string[]
+  topics: string[]
+  speakers: string[]
+}
+
+export interface AnalysisResults {
+  summary: string
+  decisions: string[]
+  conflicts: ConflictResult[]
+  actionItems: ActionItem[]
+  knowledgeUpdates: KnowledgeUpdate[]
+}
+
+// ---------------------------------------------------------------------------
+// Top-level document
+// ---------------------------------------------------------------------------
+
+export interface AnalysisDocument {
+  _id?: ObjectId
+  userId: ObjectId              // Reference to users collection
+  title: string                 // Auto-generated from first 60 chars of summary
+  transcript: string
+  existingNotes: string
+  results: AnalysisResults
+  createdAt: Date
+}
+
+/**
+ * Lightweight list item for the sidebar — excludes heavy text fields.
+ */
+export interface AnalysisListItem {
+  id: string
+  title: string
+  date: string                  // Formatted date string for the UI
+}
+
+/**
+ * Convert a full AnalysisDocument to a sidebar list item.
+ */
+export function toAnalysisListItem(doc: AnalysisDocument): AnalysisListItem {
+  return {
+    id: doc._id!.toHexString(),
+    title: doc.title,
+    date: doc.createdAt.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    }),
+  }
+}
+
+/**
+ * Returns the typed MongoDB collection for analyses.
+ * Creates a userId index for efficient per-user queries.
+ */
+export async function getAnalysesCollection(): Promise<Collection<AnalysisDocument>> {
+  const db = await getDB()
+  const collection = db.collection<AnalysisDocument>('analyses')
+
+  // Index for fetching all analyses by user (sorted by date)
+  await collection.createIndex({ userId: 1, createdAt: -1 })
+
+  return collection
+}
