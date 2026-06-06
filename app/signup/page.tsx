@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Brain } from 'lucide-react'
 import { AnimatedBackground } from '@/components/3d/animated-background'
+import { toast } from 'sonner'
 
 export default function SignupPage() {
   const router = useRouter()
@@ -32,12 +33,13 @@ export default function SignupPage() {
       })
       const data = await response.json()
       if (!response.ok) {
-        alert(data.message || 'Signup failed. Please try again.')
+        toast.error(data.message || 'Signup failed. Please try again.')
         return
       }
+      toast.success('Account created successfully!')
       router.push('/dashboard')
     } catch (error) {
-      alert('Network error. Please check your connection and try again.')
+      toast.error('Network error. Please check your connection and try again.')
     }
   }
 

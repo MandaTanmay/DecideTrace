@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { CheckCircle2, Loader2, Mic, Upload, FileAudio, X, AlertCircle, StopCircle, Paperclip } from 'lucide-react'
+import { toast } from 'sonner'
 import { SceneCanvas } from '@/components/3d/scene-canvas'
 import { ProgressSphere } from '@/components/3d/progress-sphere'
 
@@ -240,7 +241,7 @@ export function AnalysisForm({ onAnalysisComplete }: AnalysisFormProps) {
       onAnalysisComplete(data)
     } catch (error: any) {
       console.error('Analysis error:', error)
-      alert(error.message || 'Analysis failed. Please check your API keys and try again.')
+      toast.error(error.message || 'Analysis failed. Please check your API keys and try again.')
     } finally {
       setLoading(false)
       setCurrentStep(null)
