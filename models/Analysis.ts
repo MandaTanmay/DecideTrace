@@ -24,6 +24,7 @@ export interface ActionItem {
   owner: string
   deadline: string
   priority: 'High' | 'Medium' | 'Low'
+  isCompleted?: boolean
 }
 
 export interface KnowledgeUpdate {

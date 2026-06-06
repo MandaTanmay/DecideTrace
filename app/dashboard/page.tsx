@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react'
 import { DashboardSidebar, Analysis, User } from '@/components/dashboard-sidebar'
 import { AnalysisForm } from '@/components/analysis-form'
 import { AnalysisResults } from '@/components/analysis-results'
+import { KnowledgeGraphView } from '@/components/knowledge-graph-view'
 
-type ViewState = 'form' | 'results'
+type ViewState = 'form' | 'results' | 'graph'
 
 export default function DashboardPage() {
   const [viewState, setViewState] = useState<ViewState>('form')
@@ -33,6 +34,11 @@ export default function DashboardPage() {
     setViewState('form')
     setSelectedAnalysisId(null)
     setAnalysisData(null)
+  }
+
+  const handleShowGraph = () => {
+    setViewState('graph')
+    setSelectedAnalysisId(null)
   }
 
   const handleSelectAnalysis = async (id: string) => {
@@ -76,6 +82,7 @@ export default function DashboardPage() {
         selectedAnalysisId={selectedAnalysisId}
         onSelectAnalysis={handleSelectAnalysis}
         onNewAnalysis={handleNewAnalysis}
+        onShowGraph={handleShowGraph}
       />
 
       {/* Main Content */}
@@ -83,8 +90,16 @@ export default function DashboardPage() {
         <div className="max-w-7xl mx-auto px-8 py-8">
           {viewState === 'form' ? (
             <AnalysisForm onAnalysisComplete={handleAnalysisComplete} />
-          ) : (
+          ) : viewState === 'results' ? (
             <AnalysisResults data={analysisData} onBack={handleNewAnalysis} />
+          ) : (
+            <div>
+              <div className="mb-6">
+                <h1 className="text-3xl font-bold mb-2">Knowledge Graph</h1>
+                <p className="text-muted-foreground text-sm">Visualize your decisions, topics, and conflicts over time.</p>
+              </div>
+              <KnowledgeGraphView />
+            </div>
           )}
         </div>
       </div>

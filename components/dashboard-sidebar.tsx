@@ -1,8 +1,11 @@
-'use client'
-
-import { Brain, Plus, LogOut } from 'lucide-react'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { useRouter } from 'next/navigation'
+import { Plus, LayoutDashboard, Settings, LogOut, FileText, Brain, Network } from 'lucide-react'
+
+export interface User {
+  name: string
+  email: string
+}
 
 export interface Analysis {
   id: string
@@ -10,17 +13,13 @@ export interface Analysis {
   date: string
 }
 
-export interface User {
-  name: string
-  email: string
-}
-
 interface DashboardSidebarProps {
-  user?: User | null
+  user: User | null
   analyses: Analysis[]
   selectedAnalysisId: string | null
   onSelectAnalysis: (id: string) => void
   onNewAnalysis: () => void
+  onShowGraph?: () => void
 }
 
 export function DashboardSidebar({
@@ -28,77 +27,79 @@ export function DashboardSidebar({
   analyses,
   selectedAnalysisId,
   onSelectAnalysis,
-  onNewAnalysis
+  onNewAnalysis,
+  onShowGraph
 }: DashboardSidebarProps) {
-  const router = useRouter()
-
   return (
-    <div className="w-60 bg-background border-r border-border flex flex-col">
-      {/* Logo */}
-      <div className="p-6 border-b border-border flex items-center gap-2 group hover:opacity-80 transition-opacity cursor-pointer">
-        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center group-hover:scale-110 transition-transform">
-          <Brain className="w-4 h-4 text-white" />
-        </div>
-        <span className="font-bold text-lg">MeetMind</span>
+    <div className="w-64 border-r border-border bg-card/50 flex flex-col h-screen">
+      <div className="p-4 border-b border-border flex items-center justify-between">
+        <Link href="/" className="flex items-center gap-2 text-primary font-semibold">
+          <Brain className="w-5 h-5" />
+          MeetMind
+        </Link>
       </div>
 
-      {/* New Analysis Button */}
-      <div className="p-6 border-b border-border">
-        <Button onClick={onNewAnalysis} className="w-full" size="lg">
-          <Plus className="w-4 h-4 mr-2" />
+      <div className="p-4 space-y-2">
+        <Button onClick={onNewAnalysis} className="w-full justify-start gap-2">
+          <Plus className="w-4 h-4" />
           New Analysis
         </Button>
+        {onShowGraph && (
+          <Button onClick={onShowGraph} variant="outline" className="w-full justify-start gap-2 border-primary/20 text-primary hover:bg-primary/10 hover:text-primary">
+            <Network className="w-4 h-4" />
+            Knowledge Graph
+          </Button>
+        )}
       </div>
 
-      {/* Past Analyses List */}
-      <div className="flex-1 overflow-y-auto p-4">
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-          Past Analyses
-        </h3>
-        <div className="space-y-2">
+      <div className="flex-1 overflow-y-auto px-4 py-2">
+        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+          Recent Analyses
+        </div>
+        <div className="space-y-1">
           {analyses.length === 0 ? (
-            <p className="text-sm text-muted-foreground px-2">No analyses yet</p>
+            <p className="text-sm text-muted-foreground italic px-2">No analyses yet</p>
           ) : (
             analyses.map((analysis) => (
               <button
                 key={analysis.id}
                 onClick={() => onSelectAnalysis(analysis.id)}
-                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                className={`w-full flex flex-col items-start px-3 py-2 rounded-lg text-sm transition-colors ${
                   selectedAnalysisId === analysis.id
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-foreground hover:bg-secondary'
+                    ? 'bg-primary/10 text-primary font-medium'
+                    : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'
                 }`}
               >
-                <div className="font-medium truncate">{analysis.title}</div>
-                <div className="text-xs mt-1 opacity-75">{analysis.date}</div>
+                <div className="flex items-center gap-2 w-full">
+                  <FileText className="w-4 h-4 shrink-0" />
+                  <span className="truncate">{analysis.title || 'Untitled Meeting'}</span>
+                </div>
+                <span className="text-[10px] opacity-70 ml-6 mt-0.5">{analysis.date}</span>
               </button>
             ))
           )}
         </div>
       </div>
 
-      {/* User Section */}
-      <div className="p-4 border-t border-border space-y-3">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold shrink-0">
-            {user?.name 
-              ? user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() 
-              : '?'}
+      <div className="p-4 border-t border-border mt-auto space-y-1">
+        {user ? (
+          <div className="mb-4 px-2">
+            <p className="text-sm font-medium truncate">{user.name}</p>
+            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium truncate">{user?.name || 'Loading...'}</div>
-            <div className="text-xs text-muted-foreground truncate">{user?.email || ''}</div>
-          </div>
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full justify-start"
-          onClick={() => router.push('/')}
+        ) : null}
+        
+        <button 
+          onClick={() => {
+            fetch('/api/auth/logout', { method: 'POST' }).then(() => {
+              window.location.href = '/'
+            })
+          }}
+          className="w-full flex items-center gap-2 px-2 py-2 text-sm text-destructive/80 hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
         >
-          <LogOut className="w-4 h-4 mr-2" />
+          <LogOut className="w-4 h-4" />
           Logout
-        </Button>
+        </button>
       </div>
     </div>
   )

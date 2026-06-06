@@ -39,11 +39,17 @@ function buildPastMeetingContext(
       .map((c) => `  - ${c.decision} (contradicts: "${c.contradictingNote}")`)
       .join('\n')
 
+    const unresolvedActionItems = analysis.results.actionItems?.filter(item => !item.isCompleted) || []
+    const unresolvedTasks = unresolvedActionItems
+      .map(t => `  - [ ] ${t.task} (Owner: ${t.owner}, Deadline: ${t.deadline})`)
+      .join('\n')
+
     return [
       `--- Analysis from ${date} ---`,
       `Summary: ${analysis.results.summary}`,
       decisions ? `Decisions made:\n${decisions}` : 'Decisions: none recorded',
       conflicts ? `Conflicts found:\n${conflicts}` : 'Conflicts: none detected',
+      unresolvedTasks ? `Unresolved Action Items from this meeting:\n${unresolvedTasks}` : 'Unresolved Action Items: none',
       '---',
     ].join('\n')
   })

@@ -35,7 +35,7 @@ export function AnalysisForm({ onAnalysisComplete }: AnalysisFormProps) {
 
   const [isRecording, setIsRecording] = useState(false)
   const [recordingTime, setRecordingTime] = useState(0)
-  
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null)
@@ -59,7 +59,7 @@ export function AnalysisForm({ onAnalysisComplete }: AnalysisFormProps) {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
         const file = new File([audioBlob], `recording-${new Date().toISOString().slice(0, 10)}.webm`, { type: 'audio/webm' })
         setAudioFile(file)
-        
+
         // Stop all tracks to release microphone
         stream.getTracks().forEach(track => track.stop())
       }
@@ -69,7 +69,7 @@ export function AnalysisForm({ onAnalysisComplete }: AnalysisFormProps) {
       setRecordingTime(0)
       setTranscribeError(null)
       setTranscribeSuccess(false)
-      
+
       timerIntervalRef.current = setInterval(() => {
         setRecordingTime(prev => prev + 1)
       }, 1000)
@@ -117,7 +117,7 @@ export function AnalysisForm({ onAnalysisComplete }: AnalysisFormProps) {
   const handleFileSelection = (file: File) => {
     setTranscribeError(null)
     setTranscribeSuccess(false)
-    
+
     // Check if it's a text/document file
     const textTypes = ['text/plain', 'text/markdown', 'text/csv', 'application/json']
     if (textTypes.includes(file.type) || file.name.match(/\.(txt|md|csv|json)$/i)) {
@@ -262,7 +262,7 @@ export function AnalysisForm({ onAnalysisComplete }: AnalysisFormProps) {
               </SceneCanvas>
             </div>
           </div>
-          
+
           {/* Analysis Steps */}
           <div className="bg-card border border-border rounded-lg p-6">
             <h2 className="text-lg font-semibold mb-4">Processing your analysis...</h2>
@@ -293,7 +293,7 @@ export function AnalysisForm({ onAnalysisComplete }: AnalysisFormProps) {
 
       {!loading && (
         <form onSubmit={handleSubmit} className="space-y-6">
-          
+
           {/* Unified Attachment Toolbar */}
           <div className="flex flex-wrap items-center gap-3 bg-card border border-border rounded-lg p-3 shadow-sm">
             <Button
@@ -313,7 +313,7 @@ export function AnalysisForm({ onAnalysisComplete }: AnalysisFormProps) {
               accept=".txt,.md,.csv,.json,audio/*,video/*"
               className="hidden"
             />
-            
+
             <Button
               type="button"
               variant="secondary"
@@ -361,10 +361,10 @@ export function AnalysisForm({ onAnalysisComplete }: AnalysisFormProps) {
                   <p className="text-xs text-muted-foreground font-medium">{(audioFile.size / (1024 * 1024)).toFixed(2)} MB</p>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-shrink-0">
-                <Button 
-                  type="button" 
+                <Button
+                  type="button"
                   onClick={handleTranscribe}
                   disabled={isTranscribing}
                   size="sm"
@@ -378,9 +378,9 @@ export function AnalysisForm({ onAnalysisComplete }: AnalysisFormProps) {
                     'Transcribe'
                   )}
                 </Button>
-                <Button 
-                  type="button" 
-                  variant="ghost" 
+                <Button
+                  type="button"
+                  variant="ghost"
                   size="icon"
                   onClick={clearFile}
                   disabled={isTranscribing}
@@ -439,8 +439,8 @@ export function AnalysisForm({ onAnalysisComplete }: AnalysisFormProps) {
           </div>
 
           <div className="flex justify-center">
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               size="lg"
               disabled={!transcript.trim() || !notes.trim() || loading}
             >

@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Check, Copy, AlertCircle, CheckCircle2, Download } from 'lucide-react'
 import { InteractiveCard3D } from '@/components/3d/interactive-card-3d'
 import { generateAnalysisPDF } from '@/src/lib/exportPdf'
+import { toast } from 'sonner'
+import { useEffect } from 'react'
 
 interface AnalysisResultsProps {
   data: any
@@ -15,6 +17,41 @@ export function AnalysisResults({ data, onBack }: AnalysisResultsProps) {
   const [activeTab, setActiveTab] = useState<'summary' | 'conflicts' | 'action-items' | 'knowledge'>('summary')
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [isExporting, setIsExporting] = useState(false)
+  const [actionItems, setActionItems] = useState<any[]>(data.actionItems || [])
+
+  useEffect(() => {
+    setActionItems(data.actionItems || [])
+  }, [data.actionItems])
+
+  const handleToggleActionItem = async (index: number) => {
+    if (!data.id) {
+      toast.error("Cannot update action items before analysis is saved.")
+      return
+    }
+    
+    const item = actionItems[index]
+    const newStatus = !item.isCompleted
+    
+    // Optimistic update
+    const newItems = [...actionItems]
+    newItems[index] = { ...item, isCompleted: newStatus }
+    setActionItems(newItems)
+
+    try {
+      const response = await fetch(`/api/analyses/${data.id}/action-items`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ itemIndex: index, isCompleted: newStatus })
+      })
+      if (!response.ok) throw new Error('Failed to update')
+    } catch (err) {
+      // Revert on error
+      const revertItems = [...actionItems]
+      revertItems[index] = { ...item, isCompleted: !newStatus }
+      setActionItems(revertItems)
+      toast.error('Failed to update action item.')
+    }
+  }
 
   const copyToClipboard = (text: string, id: string) => {
     navigator.clipboard.writeText(text)
@@ -149,6 +186,7 @@ export function AnalysisResults({ data, onBack }: AnalysisResultsProps) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border">
+                  <th className="text-left py-3 px-4 w-12"></th>
                   <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Task</th>
                   <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Owner</th>
                   <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Deadline</th>
@@ -156,9 +194,17 @@ export function AnalysisResults({ data, onBack }: AnalysisResultsProps) {
                 </tr>
               </thead>
               <tbody>
-                {data.actionItems.map((item: any, idx: number) => (
-                  <tr key={idx} className={`border-b border-border ${idx % 2 === 0 ? 'bg-secondary/20' : ''}`}>
-                    <td className="py-4 px-4 text-foreground">{item.task}</td>
+                {actionItems.map((item: any, idx: number) => (
+                  <tr key={idx} className={`border-b border-border ${idx % 2 === 0 ? 'bg-secondary/20' : ''} ${item.isCompleted ? 'opacity-50' : ''}`}>
+                    <td className="py-4 px-4 text-center">
+                      <input 
+                        type="checkbox" 
+                        checked={!!item.isCompleted} 
+                        onChange={() => handleToggleActionItem(idx)}
+                        className="w-5 h-5 accent-primary cursor-pointer transition-transform hover:scale-110"
+                      />
+                    </td>
+                    <td className={`py-4 px-4 text-foreground ${item.isCompleted ? 'line-through' : ''}`}>{item.task}</td>
                     <td className="py-4 px-4 text-foreground">{item.owner}</td>
                     <td className="py-4 px-4 text-foreground text-sm">{item.deadline}</td>
                     <td className="py-4 px-4">
