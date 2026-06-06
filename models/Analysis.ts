@@ -73,10 +73,15 @@ export interface AnalysisListItem {
  * Convert a full AnalysisDocument to a sidebar list item.
  */
 export function toAnalysisListItem(doc: AnalysisDocument): AnalysisListItem {
+  let dateObj = new Date()
+  if (doc.createdAt) {
+    dateObj = doc.createdAt instanceof Date ? doc.createdAt : new Date(doc.createdAt)
+  }
+
   return {
     id: doc._id!.toHexString(),
-    title: doc.title,
-    date: doc.createdAt.toLocaleDateString('en-US', {
+    title: doc.title || 'Untitled Analysis',
+    date: dateObj.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
