@@ -10,8 +10,8 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Second Brain Meeting Agent',
-  description: 'AI-powered meeting analysis and note comparison platform',
+  title: 'MeetMind - AI Meeting Analysis',
+  description: 'Intelligent meeting analysis platform that detects conflicts, extracts action items, and identifies knowledge gaps',
   generator: 'v0.app',
   icons: {
     icon: [

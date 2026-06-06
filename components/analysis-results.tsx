@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Check, Copy, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { InteractiveCard3D } from '@/components/3d/interactive-card-3d'
 
 interface AnalysisResultsProps {
   data: any
@@ -88,15 +89,15 @@ export function AnalysisResults({ data, onBack }: AnalysisResultsProps) {
               </div>
             ) : (
               data.conflicts.map((conflict: any) => (
-                <div key={conflict.id} className="bg-card border-l-4 border-l-destructive border border-l-destructive rounded-lg p-6">
-                  <div className="space-y-4">
+                <InteractiveCard3D key={conflict.id}>
+                  <div className="border-l-4 border-l-destructive pl-4 space-y-4">
                     <div className="space-y-2">
                       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Meeting Decision</p>
                       <p className="text-foreground">{conflict.meetingDecision}</p>
                     </div>
 
                     <div className="flex justify-center">
-                      <AlertCircle className="w-5 h-5 text-destructive" />
+                      <AlertCircle className="w-5 h-5 text-destructive animate-pulse" />
                     </div>
 
                     <div className="space-y-2">
@@ -111,7 +112,7 @@ export function AnalysisResults({ data, onBack }: AnalysisResultsProps) {
                       </div>
                     </div>
                   </div>
-                </div>
+                </InteractiveCard3D>
               ))
             )}
           </div>
@@ -159,28 +160,30 @@ export function AnalysisResults({ data, onBack }: AnalysisResultsProps) {
         {activeTab === 'knowledge' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {data.knowledgeGaps.map((gap: any, idx: number) => (
-              <div key={idx} className="bg-card border border-border rounded-lg p-6">
-                <h3 className="font-semibold text-foreground mb-3">{gap.topic}</h3>
-                <p className="text-muted-foreground text-sm mb-4">{gap.suggestion}</p>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => copyToClipboard(gap.suggestion, `gap-${idx}`)}
-                  className="w-full"
-                >
-                  {copiedId === `gap-${idx}` ? (
-                    <>
-                      <Check className="w-4 h-4 mr-2" />
-                      Copied
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-4 h-4 mr-2" />
-                      Copy to Clipboard
-                    </>
-                  )}
-                </Button>
-              </div>
+              <InteractiveCard3D key={idx}>
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-foreground text-accent">{gap.topic}</h3>
+                  <p className="text-muted-foreground text-sm">{gap.suggestion}</p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => copyToClipboard(gap.suggestion, `gap-${idx}`)}
+                    className="w-full"
+                  >
+                    {copiedId === `gap-${idx}` ? (
+                      <>
+                        <Check className="w-4 h-4 mr-2" />
+                        Copied
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4 mr-2" />
+                        Copy to Clipboard
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </InteractiveCard3D>
             ))}
           </div>
         )}

@@ -28,9 +28,11 @@ export function DashboardSidebar({
   return (
     <div className="w-60 bg-background border-r border-border flex flex-col">
       {/* Logo */}
-      <div className="p-6 border-b border-border flex items-center gap-2">
-        <Brain className="w-6 h-6 text-accent" />
-        <span className="font-bold text-lg">Second Brain</span>
+      <div className="p-6 border-b border-border flex items-center gap-2 group hover:opacity-80 transition-opacity cursor-pointer">
+        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center group-hover:scale-110 transition-transform">
+          <Brain className="w-4 h-4 text-white" />
+        </div>
+        <span className="font-bold text-lg">MeetMind</span>
       </div>
 
       {/* New Analysis Button */}

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Brain } from 'lucide-react'
+import { AnimatedBackground } from '@/components/3d/animated-background'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -27,20 +28,25 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-background text-foreground flex items-center justify-center px-4 relative overflow-hidden">
+      <AnimatedBackground />
+      <div className="absolute inset-0 bg-gradient-radial from-primary/5 via-transparent to-transparent opacity-40" />
+      
+      <div className="w-full max-w-md relative z-10">
         {/* Header */}
-        <div className="text-center mb-8">
-          <Link href="/" className="flex items-center justify-center gap-2 mb-6">
-            <Brain className="w-8 h-8 text-accent" />
-            <span className="text-2xl font-bold">Second Brain</span>
+        <div className="text-center mb-8 animate-fade-in">
+          <Link href="/" className="flex items-center justify-center gap-2 mb-6 group">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Brain className="w-5 h-5 text-white" />
+            </div>
+            <span className="text-2xl font-bold group-hover:text-accent transition-colors">MeetMind</span>
           </Link>
           <h1 className="text-2xl font-bold mb-2">Login</h1>
           <p className="text-muted-foreground">Welcome back</p>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 bg-card/50 backdrop-blur border border-border rounded-2xl p-8 shadow-2xl shadow-primary/10">
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
               Email

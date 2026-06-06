@@ -3,6 +3,9 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { CheckCircle2, Loader2 } from 'lucide-react'
+import { Canvas } from '@react-three/fiber'
+import { ProgressSphere } from '@/components/3d/progress-sphere'
+import { SceneCanvas } from '@/components/3d/scene-canvas'
 
 const ANALYSIS_STEPS = [
   { id: 1, label: 'Analyzing meeting transcript...', agent: 'Agent 1' },
@@ -105,28 +108,40 @@ export function AnalysisForm({ onAnalysisComplete }: AnalysisFormProps) {
       <h1 className="text-3xl font-bold mb-8">New Meeting Analysis</h1>
 
       {loading && (
-        <div className="mb-8 bg-card border border-border rounded-lg p-6">
-          <h2 className="text-lg font-semibold mb-4">Processing your analysis...</h2>
-          <div className="space-y-3">
-            {ANALYSIS_STEPS.map((step) => (
-              <div key={step.id} className="flex items-start gap-3">
-                <div className="mt-1">
-                  {completedSteps.includes(step.id) ? (
-                    <CheckCircle2 className="w-5 h-5 text-primary" />
-                  ) : currentStep === step.id ? (
-                    <Loader2 className="w-5 h-5 text-accent animate-spin" />
-                  ) : (
-                    <div className="w-5 h-5 rounded-full border-2 border-muted" />
-                  )}
+        <div className="mb-8 space-y-6">
+          {/* 3D Progress Sphere */}
+          <div className="bg-card border border-border rounded-lg p-8 flex justify-center">
+            <div style={{ width: '300px', height: '300px' }}>
+              <SceneCanvas className="w-full h-full">
+                <ProgressSphere progress={completedSteps.length / ANALYSIS_STEPS.length} />
+              </SceneCanvas>
+            </div>
+          </div>
+          
+          {/* Analysis Steps */}
+          <div className="bg-card border border-border rounded-lg p-6">
+            <h2 className="text-lg font-semibold mb-4">Processing your analysis...</h2>
+            <div className="space-y-3">
+              {ANALYSIS_STEPS.map((step) => (
+                <div key={step.id} className="flex items-start gap-3 group">
+                  <div className="mt-1">
+                    {completedSteps.includes(step.id) ? (
+                      <CheckCircle2 className="w-5 h-5 text-primary animate-bounce" />
+                    ) : currentStep === step.id ? (
+                      <Loader2 className="w-5 h-5 text-accent animate-spin" />
+                    ) : (
+                      <div className="w-5 h-5 rounded-full border-2 border-muted group-hover:border-primary transition-colors" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <p className={completedSteps.includes(step.id) ? 'text-foreground' : 'text-muted-foreground'}>
+                      {step.label}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{step.agent}</p>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <p className={completedSteps.includes(step.id) ? 'text-foreground' : 'text-muted-foreground'}>
-                    {step.label}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{step.agent}</p>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -145,7 +160,7 @@ export function AnalysisForm({ onAnalysisComplete }: AnalysisFormProps) {
                 onChange={(e) => setTranscript(e.target.value)}
                 placeholder="Paste your meeting transcript here..."
                 rows={12}
-                className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary resize-none"
+                className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/50 resize-none transition-all shadow-lg shadow-primary/5 hover:shadow-lg hover:shadow-primary/10"
               />
             </div>
 
@@ -160,7 +175,7 @@ export function AnalysisForm({ onAnalysisComplete }: AnalysisFormProps) {
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Paste your existing notes, previous decisions, documentation..."
                 rows={12}
-                className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary resize-none"
+                className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/50 resize-none transition-all shadow-lg shadow-accent/5 hover:shadow-lg hover:shadow-accent/10"
               />
             </div>
           </div>
