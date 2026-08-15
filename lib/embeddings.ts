@@ -1,65 +1,120 @@
 /**
  * lib/embeddings.ts
  *
- * Singleton wrapper around @huggingface/transformers feature-extraction pipeline.
- * The model downloads once (~23MB for all-MiniLM-L6-v2) and is cached in Node.js
- * process memory across requests in the same serverless container.
- *
- * Model: Xenova/all-MiniLM-L6-v2
- *   - 384-dimensional embeddings
- *   - ~23MB download (very fast cold start)
- *   - Runs entirely in Node.js via ONNX Runtime — no API key, no cost, no rate limits
- *   - Mean pooling + L2 normalization applied automatically with normalize: true
+ * Robust embedding pipeline for MeetMind.
+ * Primary: @huggingface/transformers (Xenova/all-MiniLM-L6-v2) 384-dim embeddings.
+ * Fallback: Deterministic 384-dim n-gram feature vector generator if native ONNX/transformers
+ * fails to load in serverless environments (e.g. Vercel Lambda).
  */
 
-import { pipeline, type FeatureExtractionPipeline } from '@huggingface/transformers'
-
-// Module-level singleton — persists across requests in the same container
-let embeddingPipeline: FeatureExtractionPipeline | null = null
-let initPromise: Promise<FeatureExtractionPipeline> | null = null
+let embeddingPipeline: any = null
+let initPromise: Promise<any> | null = null
+let useFallbackMode = false
 
 /**
- * Initialize (or reuse) the embedding pipeline.
- * Thread-safe via promise caching — concurrent calls get the same promise.
+ * Deterministic fallback 384-dim vector generator.
+ * Uses Murmur/hash distribution over word n-grams to produce normalized embeddings.
  */
-async function getEmbeddingPipeline(): Promise<FeatureExtractionPipeline> {
-  if (embeddingPipeline) return embeddingPipeline
+function generateFallbackEmbedding(text: string): number[] {
+  const VECTOR_DIM = 384
+  const vector = new Float32Array(VECTOR_DIM)
+  const cleaned = text.toLowerCase().replace(/[^a-z0-9\s]/g, ' ')
+  const words = cleaned.split(/\s+/).filter(w => w.length > 0)
 
-  // If already initializing, wait for the same promise (avoid double-loading)
+  if (words.length === 0) {
+    return Array.from(vector)
+  }
+
+  // Generate word unigrams, bigrams, and trigrams
+  const tokens: string[] = [...words]
+  for (let i = 0; i < words.length - 1; i++) {
+    tokens.push(`${words[i]}_${words[i + 1]}`)
+  }
+  for (let i = 0; i < words.length - 2; i++) {
+    tokens.push(`${words[i]}_${words[i + 1]}_${words[i + 2]}`)
+  }
+
+  // Hash each token into vector dimensions
+  for (const token of tokens) {
+    let hash = 5381
+    for (let i = 0; i < token.length; i++) {
+      hash = ((hash << 5) + hash) + token.charCodeAt(i)
+      hash = hash & hash // Convert to 32bit integer
+    }
+
+    const index = Math.abs(hash) % VECTOR_DIM
+    const weight = 1.0 + (token.length > 5 ? 0.5 : 0)
+    const sign = (hash & 1) === 0 ? 1 : -1
+    vector[index] += sign * weight
+  }
+
+  // L2 normalize
+  let normSum = 0
+  for (let i = 0; i < VECTOR_DIM; i++) {
+    normSum += vector[i] * vector[i]
+  }
+
+  const norm = Math.sqrt(normSum)
+  if (norm > 0) {
+    for (let i = 0; i < VECTOR_DIM; i++) {
+      vector[i] /= norm
+    }
+  }
+
+  return Array.from(vector)
+}
+
+/**
+ * Initialize (or reuse) the Hugging Face embedding pipeline.
+ */
+async function getEmbeddingPipeline(): Promise<any> {
+  if (useFallbackMode) return null
+  if (embeddingPipeline) return embeddingPipeline
   if (initPromise) return initPromise
 
   initPromise = (async () => {
-    console.log('[Embeddings] Loading Xenova/all-MiniLM-L6-v2...')
-    const pipe = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', {
-      // Cache model to default HF cache dir (~/.cache/huggingface)
-      // On Vercel, /tmp is writable — use TRANSFORMERS_CACHE env var to point there
-    })
-    embeddingPipeline = pipe as FeatureExtractionPipeline
-    console.log('[Embeddings] Model loaded and ready.')
-    return embeddingPipeline
+    try {
+      console.log('[Embeddings] Loading @huggingface/transformers (Xenova/all-MiniLM-L6-v2)...')
+      const { pipeline, env } = await import('@huggingface/transformers')
+      
+      // Configure cache directory for Vercel /tmp
+      if (process.env.VERCEL) {
+        env.cacheDir = '/tmp/.cache'
+      }
+
+      const pipe = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2')
+      embeddingPipeline = pipe
+      console.log('[Embeddings] HuggingFace model loaded successfully.')
+      return embeddingPipeline
+    } catch (err: any) {
+      console.warn('[Embeddings] Could not load @huggingface/transformers on this runtime. Switching to fallback vector engine:', err?.message || err)
+      useFallbackMode = true
+      return null
+    }
   })()
 
   return initPromise
 }
 
 /**
- * Embed a single string and return a normalized 384-dim float array.
- * Uses mean pooling across all token embeddings.
+ * Embed a string into a 384-dim float array.
  */
 export async function embedText(text: string): Promise<number[]> {
-  const pipe = await getEmbeddingPipeline()
+  try {
+    const pipe = await getEmbeddingPipeline()
+    if (pipe) {
+      const output = await pipe(text, { pooling: 'mean', normalize: true })
+      return Array.from(output.data as Float32Array)
+    }
+  } catch (err) {
+    console.warn('[Embeddings] Pipeline error, using fallback:', err)
+  }
 
-  // Run the model — output is a Tensor of shape [1, seqLen, hiddenSize]
-  const output = await pipe(text, { pooling: 'mean', normalize: true })
-
-  // Convert to a plain JS number array
-  return Array.from(output.data as Float32Array)
+  return generateFallbackEmbedding(text)
 }
 
 /**
  * Calculate cosine similarity between two embedding vectors.
- * Both vectors must be the same length.
- * Returns a value between -1 and 1 (typically 0 to 1 for normalized embeddings).
  */
 export function cosineSimilarity(a: number[], b: number[]): number {
   if (a.length !== b.length) return 0
