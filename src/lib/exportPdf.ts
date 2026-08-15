@@ -61,14 +61,6 @@ export function generateAnalysisPDF(data: AnalysisResult): void {
     return false
   }
 
-  // Helper: Print wrapped text
-  const printText = (text: string, style: 'normal' | 'bold', size: number, x: number, y: number, maxWidth: number) => {
-    setFont(style, size)
-    const lines = doc.splitTextToSize(text, maxWidth)
-    doc.text(lines, x, y)
-    return lines.length * (size * 0.4) // approximate line height
-  }
-
   // Helper: Draw horizontal line
   const drawLine = (y: number) => {
     doc.setDrawColor(COLOR_LINE)
@@ -78,7 +70,7 @@ export function generateAnalysisPDF(data: AnalysisResult): void {
 
   // ── Page 1: Header ────────────────────────────────────────────────────────
   setFont('bold', 18)
-  doc.text('DecideTrace', MARGIN, currentY)
+  doc.text('MeetMind', MARGIN, currentY)
   currentY += 10
 
   const fullTitle = (data.summary && data.summary.split('.')[0]) || data.title || 'Meeting Analysis'
@@ -255,7 +247,7 @@ export function generateAnalysisPDF(data: AnalysisResult): void {
   }
 
   // ── Generate Filename and Download ──────────────────────────────────────
-  // Filename format: decidetrace-[first-5-words-of-title-hyphenated]-[YYYY-MM-DD].pdf
+  // Filename format: meetmind-[first-5-words-of-title-hyphenated]-[YYYY-MM-DD].pdf
   const titleWords = (data.title || 'analysis')
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, '')
@@ -265,7 +257,7 @@ export function generateAnalysisPDF(data: AnalysisResult): void {
     .join('-') || 'report'
   
   const dateStrFileName = new Date().toISOString().split('T')[0]
-  const fileName = `decidetrace-${titleWords}-${dateStrFileName}.pdf`
+  const fileName = `meetmind-${titleWords}-${dateStrFileName}.pdf`
 
   doc.save(fileName)
 }
