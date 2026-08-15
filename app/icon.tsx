@@ -33,9 +33,9 @@ export default function Icon() {
           strokeLinecap="round"
           strokeLinejoin="round"
         >
-          <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-5.224 4.668A4 4 0 0 0 5.882 18H12" />
-          <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 5.224 4.668 4 4 0 0 1-5.103 8.207H12" />
-          <path d="M12 5v14" />
+          <rect width="8" height="8" x="3" y="3" rx="2" />
+          <path d="M7 11v4a2 2 0 0 0 2 2h4" />
+          <rect width="8" height="8" x="13" y="13" rx="2" />
         </svg>
       </div>
     ),
