@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
-import { CheckCircle2, Loader2, Mic, Upload, FileAudio, X, AlertCircle, StopCircle, Paperclip } from 'lucide-react'
+import { CheckCircle2, AlertCircle, Paperclip, X, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { SceneCanvas } from '@/components/3d/scene-canvas'
 import { ProgressSphere } from '@/components/3d/progress-sphere'
@@ -30,74 +30,12 @@ export function AnalysisForm({ onAnalysisComplete, onLoadingChange }: AnalysisFo
   const [metrics, setMetrics] = useState<any>(null)
   const [showInspector, setShowInspector] = useState<string | null>(null)
 
-  // Audio Upload & Recording State
-  const [audioFile, setAudioFile] = useState<File | null>(null)
-  const [isTranscribing, setIsTranscribing] = useState(false)
+  // Text Document Attachment State
   const [transcribeError, setTranscribeError] = useState<string | null>(null)
   const [transcribeSuccess, setTranscribeSuccess] = useState(false)
-
-  const [isRecording, setIsRecording] = useState(false)
-  const [recordingTime, setRecordingTime] = useState(0)
-
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
-  const audioChunksRef = useRef<Blob[]>([])
-  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // ── Recording Logic ────────────────────────────────────────────────────────
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const mediaRecorder = new MediaRecorder(stream)
-      mediaRecorderRef.current = mediaRecorder
-      audioChunksRef.current = []
 
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) {
-          audioChunksRef.current.push(e.data)
-        }
-      }
-
-      mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
-        const file = new File([audioBlob], `recording-${new Date().toISOString().slice(0, 10)}.webm`, { type: 'audio/webm' })
-        setAudioFile(file)
-
-        // Stop all tracks to release microphone
-        stream.getTracks().forEach(track => track.stop())
-      }
-
-      mediaRecorder.start()
-      setIsRecording(true)
-      setRecordingTime(0)
-      setTranscribeError(null)
-      setTranscribeSuccess(false)
-
-      timerIntervalRef.current = setInterval(() => {
-        setRecordingTime(prev => prev + 1)
-      }, 1000)
-
-    } catch (err) {
-      console.error('Error accessing microphone:', err)
-      setTranscribeError('Could not access microphone. Please check permissions.')
-    }
-  }
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop()
-      setIsRecording(false)
-      if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current)
-      }
-    }
-  }
-
-  const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60).toString().padStart(2, '0')
-    const s = (seconds % 60).toString().padStart(2, '0')
-    return `${m}:${s}`
-  }
 
   // ── File Handling ──────────────────────────────────────────────────────────
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -128,7 +66,7 @@ export function AnalysisForm({ onAnalysisComplete, onLoadingChange }: AnalysisFo
       reader.onload = (e) => {
         const text = e.target?.result as string
         setNotes(prev => prev ? prev + '\n\n' + text : text)
-        setTranscribeSuccess(true) // We reuse this state to show a "loaded" message temporarily
+        setTranscribeSuccess(true)
         setTimeout(() => setTranscribeSuccess(false), 3000)
         if (fileInputRef.current) fileInputRef.current.value = ''
       }
@@ -139,61 +77,10 @@ export function AnalysisForm({ onAnalysisComplete, onLoadingChange }: AnalysisFo
       return
     }
 
-    if (file.size > 25 * 1024 * 1024) {
-      setTranscribeError('File is too large. Maximum size is 25MB.')
-      return
-    }
-
-    const validTypes = ['audio/mpeg', 'audio/mp3', 'audio/mp4', 'audio/wav', 'audio/x-wav', 'audio/m4a', 'audio/webm', 'audio/ogg', 'video/mp4', 'video/webm']
-    if (!validTypes.includes(file.type) && !file.name.match(/\.(mp3|mp4|wav|m4a|webm|ogg)$/i)) {
-      setTranscribeError('Invalid file format. Supported: text files (.txt, .md), or audio/video (.mp3, .mp4, .wav).')
-      return
-    }
-
-    setAudioFile(file)
+    setTranscribeError('Invalid file format. Supported text files: .txt, .md, .csv, .json.')
   }
 
-  const clearFile = () => {
-    setAudioFile(null)
-    if (fileInputRef.current) fileInputRef.current.value = ''
-    setTranscribeError(null)
-    setTranscribeSuccess(false)
-  }
 
-  // ── Transcription ──────────────────────────────────────────────────────────
-  const handleTranscribe = async () => {
-    if (!audioFile) return
-
-    setIsTranscribing(true)
-    setTranscribeError(null)
-    setTranscribeSuccess(false)
-
-    try {
-      const formData = new FormData()
-      formData.append('file', audioFile)
-
-      const response = await fetch('/api/transcribe', {
-        method: 'POST',
-        body: formData,
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Transcription failed')
-      }
-
-      setTranscript(data.transcript)
-      setTranscribeSuccess(true)
-      setAudioFile(null)
-      if (fileInputRef.current) fileInputRef.current.value = ''
-    } catch (err: any) {
-      console.error('Transcription error:', err)
-      setTranscribeError(err.message || 'Failed to transcribe audio.')
-    } finally {
-      setIsTranscribing(false)
-    }
-  }
 
   // ── Analysis ───────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
@@ -433,94 +320,20 @@ export function AnalysisForm({ onAnalysisComplete, onLoadingChange }: AnalysisFo
                 className="bg-background/80 hover:bg-transparent border-none text-white transition-all shadow-none"
               >
                 <Paperclip className="w-4 h-4 mr-2 text-primary" />
-                Attach File
+                Attach Text Document
               </Button>
             </div>
             <input
               type="file"
               ref={fileInputRef}
               onChange={handleFileChange}
-              accept=".txt,.md,.csv,.json,audio/*,video/*"
+              accept=".txt,.md,.csv,.json"
               className="hidden"
             />
-
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={startRecording}
-              disabled={isRecording}
-              className="glass border-white/10 hover:bg-destructive/20 hover:text-destructive hover:border-destructive/50 transition-all text-white"
-            >
-              <Mic className="w-4 h-4 mr-2 text-destructive" />
-              Record Voice
-            </Button>
             <span className="text-xs text-muted-foreground ml-auto hidden sm:inline-block">
-              Supports Audio (max 25MB) & Text files (.txt, .md)
+              Supports Text files (.txt, .md, .csv, .json)
             </span>
           </div>
-
-          {/* Recording Status Bar */}
-          {isRecording && (
-            <div className="border border-destructive/30 bg-destructive/5 rounded-lg p-4 flex items-center justify-between shadow-inner animate-in fade-in slide-in-from-top-2">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-destructive/20 flex items-center justify-center animate-pulse">
-                  <Mic className="w-5 h-5 text-destructive" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-destructive">Recording Live Audio</p>
-                  <p className="text-xl font-mono text-foreground">{formatTime(recordingTime)}</p>
-                </div>
-              </div>
-              <Button type="button" variant="destructive" size="sm" onClick={stopRecording} className="animate-pulse">
-                <StopCircle className="w-4 h-4 mr-2" />
-                Stop
-              </Button>
-            </div>
-          )}
-
-          {/* Attached Audio Bar */}
-          {audioFile && (
-            <div className="border border-primary/30 bg-primary/5 rounded-lg p-4 flex items-center justify-between shadow-inner animate-in fade-in slide-in-from-top-2">
-              <div className="flex items-center gap-4 overflow-hidden w-full sm:w-auto">
-                <div className="w-10 h-10 rounded bg-primary/20 flex items-center justify-center flex-shrink-0">
-                  <FileAudio className="w-5 h-5 text-primary" />
-                </div>
-                <div className="truncate text-left flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground truncate">{audioFile.name}</p>
-                  <p className="text-xs text-muted-foreground font-medium">{(audioFile.size / (1024 * 1024)).toFixed(2)} MB</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-shrink-0">
-                <Button
-                  type="button"
-                  onClick={handleTranscribe}
-                  disabled={isTranscribing}
-                  size="sm"
-                >
-                  {isTranscribing ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Transcribing...
-                    </>
-                  ) : (
-                    'Transcribe'
-                  )}
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={clearFile}
-                  disabled={isTranscribing}
-                  className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          )}
 
           {transcribeError && (
             <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-lg text-sm flex items-start gap-2 shadow-inner">
@@ -529,10 +342,10 @@ export function AnalysisForm({ onAnalysisComplete, onLoadingChange }: AnalysisFo
             </div>
           )}
 
-          {transcribeSuccess && !audioFile && (
+          {transcribeSuccess && (
             <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 px-4 py-3 rounded-lg text-sm flex items-start gap-2 shadow-inner">
               <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" />
-              <p>Success! The content has been loaded into the text boxes below.</p>
+              <p>Success! The content has been loaded into your notes below.</p>
             </div>
           )}
 
@@ -546,7 +359,7 @@ export function AnalysisForm({ onAnalysisComplete, onLoadingChange }: AnalysisFo
                 id="transcript"
                 value={transcript}
                 onChange={(e) => setTranscript(e.target.value)}
-                placeholder="Paste your meeting transcript here, or upload audio above to auto-transcribe..."
+                placeholder="Paste your meeting transcript here..."
                 rows={12}
                 className="w-full px-4 py-4 glass border-white/10 bg-black/40 text-white placeholder-white/30 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary focus:bg-primary/5 resize-none transition-all duration-300 rounded-xl"
               />

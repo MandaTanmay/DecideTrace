@@ -45,7 +45,7 @@ export default function DashboardPage() {
   const handleRenameAnalysis = (id: string, newTitle: string) => {
     setAnalyses(prev => prev.map(a => a.id === id ? { ...a, title: newTitle } : a))
     // If the open report is the renamed one, update its title too
-    if (analysisData && (analysisData.id === id)) {
+    if (analysisData && (analysisData.id === id || analysisData._id === id || selectedAnalysisId === id)) {
       setAnalysisData((prev: any) => ({ ...prev, title: newTitle }))
     }
   }

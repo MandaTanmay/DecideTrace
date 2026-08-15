@@ -28,12 +28,12 @@ export async function POST(request: NextRequest) {
     }
 
     const validTypes = [
-      'audio/mpeg', 'audio/mp3', 'audio/mp4', 'audio/wav', 'audio/x-wav', 
-      'audio/m4a', 'audio/webm', 'audio/ogg', 'video/mp4', 'video/webm'
+      'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-wav', 
+      'audio/m4a', 'audio/webm', 'audio/ogg'
     ]
     
-    if (!validTypes.includes(file.type) && !file.name.match(/\.(mp3|mp4|wav|m4a|webm|ogg)$/i)) {
-      return NextResponse.json({ message: 'Invalid file format. Supported formats: mp3, mp4, wav, m4a, webm, ogg.' }, { status: 400 })
+    if (!validTypes.includes(file.type) && !file.name.match(/\.(mp3|wav|m4a|webm|ogg)$/i)) {
+      return NextResponse.json({ message: 'Invalid file format. Supported formats: mp3, wav, m4a, webm, ogg.' }, { status: 400 })
     }
 
     // ── Send to Groq Whisper ──────────────────────────────────────────────

@@ -152,7 +152,7 @@ export function AnalysisResults({ data, onBack }: AnalysisResultsProps) {
       {/* Header */}
       <div className="mb-6 flex flex-col md:flex-row justify-between items-start gap-4 fade-up">
         <div className="pr-4">
-          <h1 className="text-2xl font-extrabold mb-1 leading-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70">{data.summary.split('.')[0]}</h1>
+          <h1 className="text-2xl font-extrabold mb-1 leading-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70">{data.title || data.summary?.split('.')[0] || 'Analysis Report'}</h1>
           <p className="text-muted-foreground text-[10px] font-mono tracking-widest uppercase flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 glow-pulse"></span>
             Analysis completed on {data.createdAt ? new Date(data.createdAt).toLocaleDateString() : new Date().toLocaleDateString()}
@@ -223,40 +223,42 @@ export function AnalysisResults({ data, onBack }: AnalysisResultsProps) {
         {activeTab === 'conflicts' && (
           <div className="space-y-4 fade-up max-w-5xl mx-auto" style={{ animationDelay: '0.2s' }}>
             {data.conflicts.length === 0 ? (
-              <div className="glass border-emerald-500/30 bg-emerald-500/5 rounded-xl p-6 flex items-center justify-center gap-4">
-                <CheckCircle2 className="w-6 h-6 text-emerald-400 glow-pulse flex-shrink-0" />
+              <div className="glass border-emerald-500/30 bg-emerald-500/5 rounded-xl p-5 flex items-center justify-center gap-4">
+                <CheckCircle2 className="w-5 h-5 text-emerald-400 glow-pulse flex-shrink-0" />
                 <div>
-                  <h3 className="font-bold text-emerald-400 mb-1 text-lg">System Integrity Verified</h3>
-                  <p className="text-white/70 text-sm">Your meeting decisions align perfectly with your existing notes.</p>
+                  <h3 className="font-bold text-emerald-400 mb-0.5 text-base">System Integrity Verified</h3>
+                  <p className="text-white/70 text-xs">Your meeting decisions align perfectly with your existing notes.</p>
                 </div>
               </div>
             ) : (
               data.conflicts.map((conflict: any) => (
                 <InteractiveCard3D key={conflict.id}>
-                  <div className="glass border-l-4 border-l-destructive/80 p-5 space-y-4 hover:border-l-destructive transition-all hover:bg-white/[0.03]">
-                    <div className="space-y-1.5">
-                      <p className="text-[10px] font-bold text-destructive/80 uppercase tracking-widest flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-destructive glow-pulse"></span>
-                        Meeting Decision
-                      </p>
-                      <p className="text-white/90 font-medium text-base">{conflict.meetingDecision}</p>
-                    </div>
+                  <div className="glass border-l-4 border-l-destructive/80 p-5 space-y-4 hover:border-l-destructive transition-all hover:bg-white/[0.03] rounded-xl">
+                    {/* Side-by-Side 2-Column Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch relative">
+                      {/* Left: Meeting Decision */}
+                      <div className="space-y-1.5 p-3.5 rounded-lg bg-destructive/5 border border-destructive/15 flex flex-col">
+                        <p className="text-[10px] font-bold text-destructive/90 uppercase tracking-widest flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-destructive glow-pulse"></span>
+                          Meeting Decision
+                        </p>
+                        <p className="text-white/90 font-medium text-sm leading-relaxed">{conflict.meetingDecision}</p>
+                      </div>
 
-                    <div className="flex justify-center py-2 relative">
-                      <div className="absolute left-0 right-0 top-1/2 h-px bg-white/5" />
-                      <div className="bg-background/80 p-2 rounded-full relative z-10 border border-white/5">
-                        <AlertCircle className="w-5 h-5 text-destructive animate-pulse" />
+                      {/* Right: Contradicts Note */}
+                      <div className="space-y-1.5 p-3.5 rounded-lg bg-white/[0.02] border border-white/10 flex flex-col">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-white/40"></span>
+                          Contradicts Your Note
+                        </p>
+                        <p className="text-white/80 text-xs leading-relaxed">{conflict.conflictingNote}</p>
                       </div>
                     </div>
 
-                    <div className="space-y-1.5">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Contradicts Your Note</p>
-                      <p className="text-white/80 text-sm">{conflict.conflictingNote}</p>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-3 border-t border-white/5">
-                      <p className="text-xs text-white/60 flex-1 pr-4">{conflict.explanation}</p>
-                      <div className="bg-destructive/10 text-destructive border border-destructive/20 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider shrink-0">
+                    {/* Footer Explanation */}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-3 border-t border-white/5 gap-3">
+                      <p className="text-xs text-white/60 flex-1 leading-snug">{conflict.explanation}</p>
+                      <div className="bg-destructive/10 text-destructive border border-destructive/20 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider shrink-0">
                         {conflict.confidence}% Match
                       </div>
                     </div>
