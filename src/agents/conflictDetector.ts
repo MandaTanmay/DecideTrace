@@ -15,20 +15,11 @@
  * Runs after BOTH Agent 1 and Agent 2 complete (fan-in).
  */
 
-import { ChatGroq } from '@langchain/groq'
 import { HumanMessage, SystemMessage } from '@langchain/core/messages'
+import { invokeGroqWithFallback } from '../lib/groq-client'
 import { cosineSimilarity } from '@/lib/embeddings'
 import { embedText } from '@/lib/embeddings'
 import type { GraphStateType, ConflictItem, NoteChunk } from '../graph/state'
-
-function getGroqClient() {
-  return new ChatGroq({
-    apiKey: process.env.GROQ_API_KEY,
-    model: 'llama-3.3-70b-versatile',
-    temperature: 0.0,
-    maxTokens: 1024,
-  })
-}
 
 function stripCodeFences(text: string): string {
   return text
@@ -149,15 +140,10 @@ Your job is to determine if the meeting decision DIRECTLY and CLEARLY
 contradicts the existing notes.`
 
   try {
-    const groq = getGroqClient()
-    const response = await groq.invoke([
+    const rawText = await invokeGroqWithFallback([
       new SystemMessage(systemPrompt),
       new HumanMessage(userPrompt),
-    ])
-
-    const rawText = typeof response.content === 'string'
-      ? response.content
-      : JSON.stringify(response.content)
+    ], 1024)
 
     const parsed = JSON.parse(stripCodeFences(rawText))
 

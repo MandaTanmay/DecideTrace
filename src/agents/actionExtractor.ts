@@ -7,18 +7,9 @@
  * Runs in parallel with Agent 5 (knowledgeUpdater) after Agent 3 completes.
  */
 
-import { ChatGroq } from '@langchain/groq'
 import { HumanMessage, SystemMessage } from '@langchain/core/messages'
+import { invokeGroqWithFallback } from '../lib/groq-client'
 import type { GraphStateType, ActionItem } from '../graph/state'
-
-function getGroqClient() {
-  return new ChatGroq({
-    apiKey: process.env.GROQ_API_KEY,
-    model: 'llama-3.3-70b-versatile',
-    temperature: 0.1,
-    maxTokens: 2048,
-  })
-}
 
 function stripCodeFences(text: string): string {
   return text
@@ -64,15 +55,10 @@ Return an empty array [] if no action items are found.`
 ${transcript}`
 
   try {
-    const groq = getGroqClient()
-    const response = await groq.invoke([
+    const rawText = await invokeGroqWithFallback([
       new SystemMessage(systemPrompt),
       new HumanMessage(userPrompt),
-    ])
-
-    const rawText = typeof response.content === 'string'
-      ? response.content
-      : JSON.stringify(response.content)
+    ], 2048)
 
     const parsed = JSON.parse(stripCodeFences(rawText))
     const actionItems: ActionItem[] = Array.isArray(parsed) ? parsed.map((item: any) => ({

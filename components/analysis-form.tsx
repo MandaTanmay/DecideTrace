@@ -18,9 +18,10 @@ const ANALYSIS_STEPS = [
 
 interface AnalysisFormProps {
   onAnalysisComplete: (data: any) => void
+  onLoadingChange?: (isLoading: boolean) => void
 }
 
-export function AnalysisForm({ onAnalysisComplete }: AnalysisFormProps) {
+export function AnalysisForm({ onAnalysisComplete, onLoadingChange }: AnalysisFormProps) {
   const [transcript, setTranscript] = useState('')
   const [notes, setNotes] = useState('')
   const [loading, setLoading] = useState(false)
@@ -200,6 +201,7 @@ export function AnalysisForm({ onAnalysisComplete }: AnalysisFormProps) {
     if (!transcript.trim() || !notes.trim()) return
 
     setLoading(true)
+    onLoadingChange?.(true)
     setCompletedSteps([])
     setCurrentStep(1)
 
@@ -242,80 +244,123 @@ export function AnalysisForm({ onAnalysisComplete }: AnalysisFormProps) {
       toast.error(error.message || 'Analysis failed. Please check your API keys and try again.')
     } finally {
       setLoading(false)
+      onLoadingChange?.(false)
       setCurrentStep(null)
     }
   }
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-8">New Meeting Analysis</h1>
+      {!loading && (
+        <div className="mb-10 fade-up">
+          <h1 className="text-4xl font-extrabold tracking-tight mb-2 text-transparent bg-clip-text bg-gradient-to-r from-white to-white/60">New Meeting Analysis</h1>
+          <p className="text-muted-foreground">Upload audio, paste your transcript, and sync your knowledge base.</p>
+        </div>
+      )}
 
       {loading && (
-        <div className="mb-8 space-y-6">
+        <div className="flex flex-col items-center justify-center min-h-[80vh] w-full animate-in fade-in duration-1000 zoom-in-95">
           {/* Neural Network Loading Animation */}
-          <div className="bg-card border border-border rounded-xl overflow-hidden" style={{ height: 280, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="glass bg-deep-space border-white/10 rounded-3xl overflow-hidden shadow-[0_0_100px_rgba(99,102,241,0.25)] fade-up w-full max-w-5xl relative flex items-center justify-center" style={{ height: 600 }}>
             <style>{`
               @keyframes af-orbit1  { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
               @keyframes af-orbit2  { from{transform:rotate(0deg)} to{transform:rotate(-360deg)} }
               @keyframes af-orbit3  { from{transform:rotate(45deg)} to{transform:rotate(405deg)} }
               @keyframes af-pulse   { 0%,100%{opacity:.2;transform:scale(1)} 50%{opacity:.5;transform:scale(1.1)} }
-              @keyframes af-glow    { 0%,100%{box-shadow:0 0 16px rgba(99,102,241,0.5),0 0 40px rgba(99,102,241,0.2)} 50%{box-shadow:0 0 28px rgba(99,102,241,0.9),0 0 70px rgba(99,102,241,0.4)} }
-              @keyframes af-beam    { 0%{opacity:0;transform:scaleX(0)} 50%{opacity:1} 100%{opacity:0;transform:scaleX(1)} }
-              @keyframes af-float   { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+              @keyframes af-glow    { 0%,100%{box-shadow:0 0 20px rgba(99,102,241,0.6),0 0 60px rgba(99,102,241,0.3)} 50%{box-shadow:0 0 40px rgba(99,102,241,1),0 0 100px rgba(99,102,241,0.6)} }
+              @keyframes af-float   { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
               @keyframes af-dot     { 0%,100%{opacity:.2} 50%{opacity:1} }
               @keyframes af-scan    { 0%{top:0%;opacity:0} 10%{opacity:1} 90%{opacity:1} 100%{top:100%;opacity:0} }
+              @keyframes af-text-fade { 0%,100%{opacity:0.6;transform:translateY(0)} 50%{opacity:1;transform:translateY(-3px)} }
+              @keyframes af-particle-up { 0% { transform: translateY(100vh) scale(0); opacity: 0; } 50% { opacity: 1; } 100% { transform: translateY(-10vh) scale(1); opacity: 0; } }
             `}</style>
 
+            {/* Background Particles */}
+            <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+              {[...Array(20)].map((_, i) => (
+                <div key={i} style={{
+                  position: 'absolute',
+                  left: `${Math.random() * 100}%`,
+                  width: Math.random() * 4 + 1,
+                  height: Math.random() * 4 + 1,
+                  borderRadius: '50%',
+                  background: ['#6366f1', '#22d3ee', '#10b981', '#fff'][Math.floor(Math.random() * 4)],
+                  animation: `af-particle-up ${Math.random() * 4 + 3}s linear infinite`,
+                  animationDelay: `${Math.random() * 5}s`,
+                  opacity: 0
+                }} />
+              ))}
+            </div>
+
+            {/* Active Agent Text Animation */}
+            <div style={{ position: 'absolute', top: 60, left: 0, right: 0, textAlign: 'center', zIndex: 10 }}>
+              <p style={{
+                color: '#fff', fontSize: 28, fontWeight: 'bold', letterSpacing: '0.05em',
+                animation: 'af-text-fade 2.5s ease-in-out infinite', textShadow: '0 0 30px rgba(99,102,241,0.9)'
+              }}>
+                {currentStep ? ANALYSIS_STEPS[currentStep - 1]?.label : 'Initializing Agent Swarm...'}
+              </p>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                color: 'rgba(255,255,255,0.9)', fontSize: 13, marginTop: 16, fontFamily: 'monospace', textTransform: 'uppercase',
+                background: 'rgba(0,0,0,0.3)', padding: '6px 16px', borderRadius: 30, border: '1px solid rgba(255,255,255,0.15)',
+                backdropFilter: 'blur(8px)'
+              }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#22d3ee', animation: 'af-pulse 1s infinite', boxShadow: '0 0 10px #22d3ee' }} />
+                {currentStep ? ANALYSIS_STEPS[currentStep - 1]?.agent : 'System Node 00'} Active
+              </div>
+            </div>
+
             {/* Background radial glow */}
-            <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse 70% 60% at 50% 50%, rgba(99,102,241,0.08) 0%, transparent 70%)' }} />
+            <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse 80% 80% at 50% 50%, rgba(99,102,241,0.1) 0%, transparent 70%)' }} />
 
             {/* Scan line */}
-            <div style={{ position:'absolute', left:0, right:0, height:1, background:'linear-gradient(90deg, transparent 0%, rgba(99,102,241,0.4) 50%, transparent 100%)', animation:'af-scan 3s ease-in-out infinite' }} />
+            <div style={{ position:'absolute', left:0, right:0, height:2, background:'linear-gradient(90deg, transparent 0%, rgba(99,102,241,0.6) 50%, transparent 100%)', animation:'af-scan 4s ease-in-out infinite', filter: 'blur(1px)' }} />
 
-            {/* Orbit system */}
-            <div style={{ position:'relative', width:220, height:220 }}>
+            {/* Orbit system - Scaled up */}
+            <div style={{ position:'relative', width:340, height:340, transform: 'scale(1.2)' }}>
               {/* Pulse ring 1 */}
-              <div style={{ position:'absolute', inset:-20, borderRadius:'50%', border:'1px solid rgba(99,102,241,0.15)', animation:'af-pulse 3s ease-in-out infinite' }} />
+              <div style={{ position:'absolute', inset:-30, borderRadius:'50%', border:'1px solid rgba(99,102,241,0.2)', animation:'af-pulse 3s ease-in-out infinite' }} />
               {/* Pulse ring 2 */}
-              <div style={{ position:'absolute', inset:-6, borderRadius:'50%', border:'1px solid rgba(99,102,241,0.25)', animation:'af-pulse 2.5s ease-in-out infinite 0.5s' }} />
+              <div style={{ position:'absolute', inset:-10, borderRadius:'50%', border:'1px solid rgba(99,102,241,0.3)', animation:'af-pulse 2.5s ease-in-out infinite 0.5s' }} />
 
               {/* Outer orbit — 5 nodes */}
-              <div style={{ position:'absolute', inset:0, borderRadius:'50%', border:'1px dashed rgba(255,255,255,0.07)', animation:'af-orbit1 10s linear infinite' }}>
+              <div style={{ position:'absolute', inset:0, borderRadius:'50%', border:'1px dashed rgba(255,255,255,0.1)', animation:'af-orbit1 15s linear infinite' }}>
                 {[0,1,2,3,4].map(i => (
                   <div key={i} style={{
-                    position:'absolute', width:10, height:10, borderRadius:'50%',
+                    position:'absolute', width:14, height:14, borderRadius:'50%',
                     background: ['#3b82f6','#6366f1','#10b981','#f43f5e','#8b5cf6'][i],
-                    boxShadow: `0 0 8px ${['#3b82f6','#6366f1','#10b981','#f43f5e','#8b5cf6'][i]}`,
-                    top: `calc(50% + ${Math.sin(i * 72 * Math.PI/180) * 100}px - 5px)`,
-                    left: `calc(50% + ${Math.cos(i * 72 * Math.PI/180) * 100}px - 5px)`,
+                    boxShadow: `0 0 12px ${['#3b82f6','#6366f1','#10b981','#f43f5e','#8b5cf6'][i]}`,
+                    top: `calc(50% + ${Math.sin(i * 72 * Math.PI/180) * 170}px - 7px)`,
+                    left: `calc(50% + ${Math.cos(i * 72 * Math.PI/180) * 170}px - 7px)`,
                     animation: `af-dot 1.6s ease-in-out ${i * 0.3}s infinite`
                   }} />
                 ))}
               </div>
 
               {/* Middle orbit — 3 nodes counter */}
-              <div style={{ position:'absolute', inset:30, borderRadius:'50%', border:'1px dashed rgba(255,255,255,0.05)', animation:'af-orbit2 7s linear infinite' }}>
+              <div style={{ position:'absolute', inset:50, borderRadius:'50%', border:'1px dashed rgba(255,255,255,0.08)', animation:'af-orbit2 10s linear infinite' }}>
                 {[0,1,2].map(i => (
                   <div key={i} style={{
-                    position:'absolute', width:8, height:8, borderRadius:'50%',
+                    position:'absolute', width:12, height:12, borderRadius:'50%',
                     background: ['#06b6d4','#a855f7','#f59e0b'][i],
-                    boxShadow: `0 0 6px ${['#06b6d4','#a855f7','#f59e0b'][i]}`,
-                    top: `calc(50% + ${Math.sin(i * 120 * Math.PI/180) * 65}px - 4px)`,
-                    left: `calc(50% + ${Math.cos(i * 120 * Math.PI/180) * 65}px - 4px)`,
+                    boxShadow: `0 0 10px ${['#06b6d4','#a855f7','#f59e0b'][i]}`,
+                    top: `calc(50% + ${Math.sin(i * 120 * Math.PI/180) * 120}px - 6px)`,
+                    left: `calc(50% + ${Math.cos(i * 120 * Math.PI/180) * 120}px - 6px)`,
                     animation: `af-dot 2s ease-in-out ${i * 0.4}s infinite`
                   }} />
                 ))}
               </div>
 
               {/* Inner orbit — 2 nodes */}
-              <div style={{ position:'absolute', inset:58, borderRadius:'50%', border:'1px dashed rgba(255,255,255,0.08)', animation:'af-orbit3 5s linear infinite' }}>
+              <div style={{ position:'absolute', inset:100, borderRadius:'50%', border:'1px dashed rgba(255,255,255,0.1)', animation:'af-orbit3 7s linear infinite' }}>
                 {[0,1].map(i => (
                   <div key={i} style={{
-                    position:'absolute', width:6, height:6, borderRadius:'50%',
+                    position:'absolute', width:10, height:10, borderRadius:'50%',
                     background: ['#ec4899','#14b8a6'][i],
-                    boxShadow: `0 0 6px ${['#ec4899','#14b8a6'][i]}`,
-                    top: `calc(50% + ${Math.sin(i * 180 * Math.PI/180) * 32}px - 3px)`,
-                    left: `calc(50% + ${Math.cos(i * 180 * Math.PI/180) * 32}px - 3px)`,
+                    boxShadow: `0 0 8px ${['#ec4899','#14b8a6'][i]}`,
+                    top: `calc(50% + ${Math.sin(i * 180 * Math.PI/180) * 70}px - 5px)`,
+                    left: `calc(50% + ${Math.cos(i * 180 * Math.PI/180) * 70}px - 5px)`,
                     animation: `af-dot 1.4s ease-in-out ${i * 0.5}s infinite`
                   }} />
                 ))}
@@ -323,29 +368,30 @@ export function AnalysisForm({ onAnalysisComplete }: AnalysisFormProps) {
 
               {/* Core */}
               <div style={{
-                position:'absolute', inset:88, borderRadius:'50%',
-                background:'radial-gradient(circle, #fff 0%, rgba(180,180,255,0.9) 40%, rgba(99,102,241,0.6) 100%)',
-                animation:'af-glow 2s ease-in-out infinite, af-float 3s ease-in-out infinite',
+                position:'absolute', inset:140, borderRadius:'50%',
+                background:'radial-gradient(circle, #fff 0%, rgba(180,180,255,0.9) 40%, rgba(99,102,241,0.8) 100%)',
+                animation:'af-glow 2.5s ease-in-out infinite, af-float 4s ease-in-out infinite',
               }} />
             </div>
 
             {/* Progress bar */}
-            <div style={{ position:'absolute', bottom:20, left:40, right:40 }}>
-              <div style={{ height:2, background:'rgba(255,255,255,0.07)', borderRadius:4, overflow:'hidden' }}>
+            <div style={{ position:'absolute', bottom:40, left:60, right:60 }}>
+              <div style={{ height:4, background:'rgba(255,255,255,0.1)', borderRadius:8, overflow:'hidden' }}>
                 <div style={{
-                  height:'100%', borderRadius:4,
-                  background:'linear-gradient(90deg, #6366f1, #3b82f6, #10b981)',
+                  height:'100%', borderRadius:8,
+                  background:'linear-gradient(90deg, #6366f1, #3b82f6, #22d3ee, #10b981)',
+                  backgroundSize: '200% 100%',
                   width: `${Math.max(5, (completedSteps.length / ANALYSIS_STEPS.length) * 100)}%`,
                   transition:'width 0.8s ease',
-                  boxShadow:'0 0 8px rgba(99,102,241,0.8)'
+                  boxShadow:'0 0 15px rgba(99,102,241,0.8)',
+                  animation: 'af-scan 2s linear infinite'
                 }} />
               </div>
-              <p style={{ textAlign:'center', marginTop:8, fontSize:12, color:'rgba(255,255,255,0.4)', letterSpacing:'0.08em' }}>
-                {completedSteps.length} / {ANALYSIS_STEPS.length} agents complete
+              <p style={{ textAlign:'center', marginTop:16, fontSize:14, color:'rgba(255,255,255,0.6)', letterSpacing:'0.1em', fontWeight: 'bold' }}>
+                {completedSteps.length} / {ANALYSIS_STEPS.length} AGENTS COMPLETE
               </p>
             </div>
           </div>
-
         </div>
       )}
 
@@ -378,17 +424,18 @@ export function AnalysisForm({ onAnalysisComplete }: AnalysisFormProps) {
         <form onSubmit={handleSubmit} className="space-y-6">
 
           {/* Unified Attachment Toolbar */}
-          <div className="flex flex-wrap items-center gap-3 bg-card border border-border rounded-lg p-3 shadow-sm">
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={() => fileInputRef.current?.click()}
-              className="hover:scale-105 transition-transform"
-            >
-              <Paperclip className="w-4 h-4 mr-2 text-primary" />
-              Attach File
-            </Button>
+          <div className="flex flex-wrap items-center gap-4 glass p-4">
+            <div className="gradient-border rounded-md">
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                className="bg-background/80 hover:bg-transparent border-none text-white transition-all shadow-none"
+              >
+                <Paperclip className="w-4 h-4 mr-2 text-primary" />
+                Attach File
+              </Button>
+            </div>
             <input
               type="file"
               ref={fileInputRef}
@@ -399,11 +446,11 @@ export function AnalysisForm({ onAnalysisComplete }: AnalysisFormProps) {
 
             <Button
               type="button"
-              variant="secondary"
+              variant="outline"
               size="sm"
               onClick={startRecording}
               disabled={isRecording}
-              className="hover:scale-105 transition-transform"
+              className="glass border-white/10 hover:bg-destructive/20 hover:text-destructive hover:border-destructive/50 transition-all text-white"
             >
               <Mic className="w-4 h-4 mr-2 text-destructive" />
               Record Voice
@@ -501,7 +548,7 @@ export function AnalysisForm({ onAnalysisComplete }: AnalysisFormProps) {
                 onChange={(e) => setTranscript(e.target.value)}
                 placeholder="Paste your meeting transcript here, or upload audio above to auto-transcribe..."
                 rows={12}
-                className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/50 resize-none transition-all shadow-lg shadow-primary/5 hover:shadow-lg hover:shadow-primary/10"
+                className="w-full px-4 py-4 glass border-white/10 bg-black/40 text-white placeholder-white/30 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary focus:bg-primary/5 resize-none transition-all duration-300 rounded-xl"
               />
             </div>
 
@@ -516,19 +563,22 @@ export function AnalysisForm({ onAnalysisComplete }: AnalysisFormProps) {
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Paste your existing notes, previous decisions, documentation..."
                 rows={12}
-                className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/50 resize-none transition-all shadow-lg shadow-accent/5 hover:shadow-lg hover:shadow-accent/10"
+                className="w-full px-4 py-4 glass border-white/10 bg-black/40 text-white placeholder-white/30 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent focus:bg-accent/5 resize-none transition-all duration-300 rounded-xl"
               />
             </div>
           </div>
 
-          <div className="flex justify-center">
-            <Button
-              type="submit"
-              size="lg"
-              disabled={!transcript.trim() || !notes.trim() || loading}
-            >
-              {loading ? 'Analyzing...' : 'Analyze Meeting'}
-            </Button>
+          <div className="flex justify-center pt-6">
+            <div className={`gradient-border rounded-lg transition-transform duration-300 ${(!transcript.trim() || !notes.trim() || loading) ? 'opacity-50 grayscale' : 'hover:scale-105'}`}>
+              <Button
+                type="submit"
+                size="lg"
+                disabled={!transcript.trim() || !notes.trim() || loading}
+                className="h-14 px-12 text-lg bg-background hover:bg-transparent border-none text-white shadow-none w-full sm:w-auto font-bold tracking-wide"
+              >
+                {loading ? 'Initializing Agents...' : 'Analyze Meeting Intelligence'}
+              </Button>
+            </div>
           </div>
         </form>
       )}

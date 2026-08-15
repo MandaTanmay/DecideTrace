@@ -14,6 +14,7 @@ export default function DashboardPage() {
   const [selectedAnalysisId, setSelectedAnalysisId] = useState<string | null>(null)
   const [analysisData, setAnalysisData] = useState<any>(null)
   const [user, setUser] = useState<User | null>(null)
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
 
   // Load analyses list and user profile on mount
   useEffect(() => {
@@ -39,6 +40,24 @@ export default function DashboardPage() {
   const handleShowGraph = () => {
     setViewState('graph')
     setSelectedAnalysisId(null)
+  }
+
+  const handleRenameAnalysis = (id: string, newTitle: string) => {
+    setAnalyses(prev => prev.map(a => a.id === id ? { ...a, title: newTitle } : a))
+    // If the open report is the renamed one, update its title too
+    if (analysisData && (analysisData.id === id)) {
+      setAnalysisData((prev: any) => ({ ...prev, title: newTitle }))
+    }
+  }
+
+  const handleDeleteAnalysis = (id: string) => {
+    setAnalyses(prev => prev.filter(a => a.id !== id))
+    // If the deleted analysis is currently open, go back to form
+    if (selectedAnalysisId === id) {
+      setViewState('form')
+      setSelectedAnalysisId(null)
+      setAnalysisData(null)
+    }
   }
 
   const handleSelectAnalysis = async (id: string) => {
@@ -75,21 +94,24 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex">
-      {/* Sidebar */}
-      <DashboardSidebar
-        user={user}
-        analyses={analyses}
-        selectedAnalysisId={selectedAnalysisId}
-        onSelectAnalysis={handleSelectAnalysis}
-        onNewAnalysis={handleNewAnalysis}
-        onShowGraph={handleShowGraph}
-      />
+      {!isAnalyzing && (
+        <DashboardSidebar
+          user={user}
+          analyses={analyses}
+          selectedAnalysisId={selectedAnalysisId}
+          onSelectAnalysis={handleSelectAnalysis}
+          onNewAnalysis={handleNewAnalysis}
+          onShowGraph={handleShowGraph}
+          onRenameAnalysis={handleRenameAnalysis}
+          onDeleteAnalysis={handleDeleteAnalysis}
+        />
+      )}
 
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-7xl mx-auto px-8 py-8">
           {viewState === 'form' ? (
-            <AnalysisForm onAnalysisComplete={handleAnalysisComplete} />
+            <AnalysisForm onAnalysisComplete={handleAnalysisComplete} onLoadingChange={setIsAnalyzing} />
           ) : viewState === 'results' ? (
             <AnalysisResults data={analysisData} onBack={handleNewAnalysis} />
           ) : (

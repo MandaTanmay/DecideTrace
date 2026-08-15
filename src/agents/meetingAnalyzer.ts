@@ -13,22 +13,9 @@
  * Runs in parallel with Agent 2 (knowledgeIndexer) from __start__.
  */
 
-import { ChatGroq } from '@langchain/groq'
 import { HumanMessage, SystemMessage } from '@langchain/core/messages'
+import { invokeGroqWithFallback } from '../lib/groq-client'
 import type { GraphStateType, MeetingAnalysis } from '../graph/state'
-
-// ---------------------------------------------------------------------------
-// Groq client factory — lazy, only instantiated at runtime
-// ---------------------------------------------------------------------------
-
-function getGroqClient() {
-  return new ChatGroq({
-    apiKey: process.env.GROQ_API_KEY,
-    model: 'llama-3.3-70b-versatile',
-    temperature: 0.1,
-    maxTokens: 2048,
-  })
-}
 
 // ---------------------------------------------------------------------------
 // Helper: strip markdown code fences before JSON.parse
@@ -82,15 +69,10 @@ ${transcript}`
 ${transcript}`
 
   try {
-    const groq = getGroqClient()
-    const response = await groq.invoke([
+    const rawText = await invokeGroqWithFallback([
       new SystemMessage(systemPrompt),
       new HumanMessage(userPrompt),
-    ])
-
-    const rawText = typeof response.content === 'string'
-      ? response.content
-      : JSON.stringify(response.content)
+    ], 2048)
 
     const cleaned = stripCodeFences(rawText)
     const parsed: MeetingAnalysis = JSON.parse(cleaned)

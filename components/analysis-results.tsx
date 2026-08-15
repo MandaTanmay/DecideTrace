@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Check, Copy, AlertCircle, CheckCircle2, Download, MessageSquare, Send, Sparkles, Bot, User as UserIcon, Loader2 } from 'lucide-react'
+import { Check, Copy, AlertCircle, CheckCircle2, Download, MessageSquare, Send, Sparkles, Bot, User as UserIcon, Loader2, Target } from 'lucide-react'
 import { InteractiveCard3D } from '@/components/3d/interactive-card-3d'
 import { generateAnalysisPDF } from '@/src/lib/exportPdf'
 import { toast } from 'sonner'
@@ -150,31 +150,36 @@ export function AnalysisResults({ data, onBack }: AnalysisResultsProps) {
   return (
     <div>
       {/* Header */}
-      <div className="mb-8 flex justify-between items-start">
+      <div className="mb-6 flex flex-col md:flex-row justify-between items-start gap-4 fade-up">
         <div className="pr-4">
-          <h1 className="text-3xl font-bold mb-2 leading-tight">{data.summary.split('.')[0]}</h1>
-          <p className="text-muted-foreground text-sm">Analysis completed on {data.createdAt ? new Date(data.createdAt).toLocaleDateString() : new Date().toLocaleDateString()}</p>
+          <h1 className="text-2xl font-extrabold mb-1 leading-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70">{data.summary.split('.')[0]}</h1>
+          <p className="text-muted-foreground text-[10px] font-mono tracking-widest uppercase flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 glow-pulse"></span>
+            Analysis completed on {data.createdAt ? new Date(data.createdAt).toLocaleDateString() : new Date().toLocaleDateString()}
+          </p>
         </div>
-        <Button onClick={handleExport} disabled={isExporting} variant="outline">
-          {isExporting ? 'Generating...' : (
-            <>
-              <Download className="w-4 h-4 mr-2" />
-              Export PDF
-            </>
-          )}
-        </Button>
+        <div className="gradient-border rounded-lg shrink-0">
+          <Button onClick={handleExport} disabled={isExporting} className="bg-background/80 hover:bg-transparent border-none text-white shadow-none transition-all">
+            {isExporting ? 'Generating...' : (
+              <>
+                <Download className="w-4 h-4 mr-2" />
+                Export PDF
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-border mb-8 flex gap-1 overflow-x-auto">
+      <div className="border-b border-white/10 mb-8 flex gap-2 overflow-x-auto fade-up p-1" style={{ animationDelay: '0.1s' }}>
         {TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
-            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors shrink-0 ${
+            className={`px-5 py-3 text-sm font-bold border-b-2 transition-all shrink-0 uppercase tracking-wider ${
               activeTab === tab.id
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
+                ? 'border-primary text-primary bg-primary/10 rounded-t-xl'
+                : 'border-transparent text-muted-foreground hover:text-white hover:bg-white/5 rounded-t-xl'
             }`}
           >
             {tab.label}
@@ -186,19 +191,27 @@ export function AnalysisResults({ data, onBack }: AnalysisResultsProps) {
       <div className="space-y-6">
         {/* Summary Tab */}
         {activeTab === 'summary' && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-lg font-semibold mb-3">Meeting Summary</h2>
-              <p className="text-foreground leading-relaxed">{data.summary}</p>
+          <div className="space-y-4 fade-up max-w-5xl mx-auto" style={{ animationDelay: '0.2s' }}>
+            <div className="glass p-6 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
+              <h2 className="text-lg font-bold mb-3 text-white flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-primary" />
+                Meeting Intelligence Summary
+              </h2>
+              <p className="text-white/80 leading-relaxed text-sm">{data.summary}</p>
             </div>
 
-            <div>
-              <h2 className="text-lg font-semibold mb-4">Key Decisions</h2>
+            <div className="glass p-6 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 h-full bg-accent" />
+              <h2 className="text-lg font-bold mb-4 text-white flex items-center gap-2">
+                <Target className="w-4 h-4 text-accent" />
+                Architectural & Strategic Decisions
+              </h2>
               <ol className="space-y-3">
                 {data.decisions.map((decision: string, idx: number) => (
-                  <li key={idx} className="flex gap-3">
-                    <span className="font-semibold text-primary min-w-6">{idx + 1}.</span>
-                    <span className="text-foreground">{decision}</span>
+                  <li key={idx} className="flex gap-3 items-start bg-black/20 p-3 rounded-xl border border-white/5 hover:border-accent/30 transition-colors">
+                    <span className="font-mono font-bold text-accent bg-accent/10 px-1.5 py-0.5 rounded text-xs shrink-0">{(idx + 1).toString().padStart(2, '0')}</span>
+                    <span className="text-white/80 leading-relaxed pt-0.5 text-sm">{decision}</span>
                   </li>
                 ))}
               </ol>
@@ -208,37 +221,43 @@ export function AnalysisResults({ data, onBack }: AnalysisResultsProps) {
 
         {/* Conflicts Tab */}
         {activeTab === 'conflicts' && (
-          <div className="space-y-4">
+          <div className="space-y-4 fade-up max-w-5xl mx-auto" style={{ animationDelay: '0.2s' }}>
             {data.conflicts.length === 0 ? (
-              <div className="bg-card border border-border rounded-lg p-6 flex items-start gap-4">
-                <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+              <div className="glass border-emerald-500/30 bg-emerald-500/5 rounded-xl p-6 flex items-center justify-center gap-4">
+                <CheckCircle2 className="w-6 h-6 text-emerald-400 glow-pulse flex-shrink-0" />
                 <div>
-                  <h3 className="font-semibold text-primary mb-1">No conflicts detected</h3>
-                  <p className="text-muted-foreground">Your meeting decisions align perfectly with your existing notes.</p>
+                  <h3 className="font-bold text-emerald-400 mb-1 text-lg">System Integrity Verified</h3>
+                  <p className="text-white/70 text-sm">Your meeting decisions align perfectly with your existing notes.</p>
                 </div>
               </div>
             ) : (
               data.conflicts.map((conflict: any) => (
                 <InteractiveCard3D key={conflict.id}>
-                  <div className="border-l-4 border-l-destructive pl-4 space-y-4">
-                    <div className="space-y-2">
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Meeting Decision</p>
-                      <p className="text-foreground">{conflict.meetingDecision}</p>
+                  <div className="glass border-l-4 border-l-destructive/80 p-5 space-y-4 hover:border-l-destructive transition-all hover:bg-white/[0.03]">
+                    <div className="space-y-1.5">
+                      <p className="text-[10px] font-bold text-destructive/80 uppercase tracking-widest flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-destructive glow-pulse"></span>
+                        Meeting Decision
+                      </p>
+                      <p className="text-white/90 font-medium text-base">{conflict.meetingDecision}</p>
                     </div>
 
-                    <div className="flex justify-center">
-                      <AlertCircle className="w-5 h-5 text-destructive animate-pulse" />
+                    <div className="flex justify-center py-2 relative">
+                      <div className="absolute left-0 right-0 top-1/2 h-px bg-white/5" />
+                      <div className="bg-background/80 p-2 rounded-full relative z-10 border border-white/5">
+                        <AlertCircle className="w-5 h-5 text-destructive animate-pulse" />
+                      </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Contradicts Your Note</p>
-                      <p className="text-foreground">{conflict.conflictingNote}</p>
+                    <div className="space-y-1.5">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Contradicts Your Note</p>
+                      <p className="text-white/80 text-sm">{conflict.conflictingNote}</p>
                     </div>
 
-                    <div className="flex items-center justify-between pt-2 border-t border-border">
-                      <p className="text-sm text-muted-foreground">{conflict.explanation}</p>
-                      <div className="bg-destructive/20 text-destructive px-3 py-1 rounded text-sm font-semibold">
-                        {conflict.confidence}% confidence
+                    <div className="flex items-center justify-between pt-3 border-t border-white/5">
+                      <p className="text-xs text-white/60 flex-1 pr-4">{conflict.explanation}</p>
+                      <div className="bg-destructive/10 text-destructive border border-destructive/20 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider shrink-0">
+                        {conflict.confidence}% Match
                       </div>
                     </div>
                   </div>
@@ -250,39 +269,39 @@ export function AnalysisResults({ data, onBack }: AnalysisResultsProps) {
 
         {/* Action Items Tab */}
         {activeTab === 'action-items' && (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto glass rounded-2xl fade-up" style={{ animationDelay: '0.2s' }}>
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left py-3 px-4 w-12"></th>
-                  <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Task</th>
-                  <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Owner</th>
-                  <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Deadline</th>
-                  <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Priority</th>
+                <tr className="border-b border-white/10 bg-black/40">
+                  <th className="text-left py-4 px-6 w-12 rounded-tl-2xl"></th>
+                  <th className="text-left py-4 px-6 font-bold text-muted-foreground uppercase tracking-wider text-xs">Task</th>
+                  <th className="text-left py-4 px-6 font-bold text-muted-foreground uppercase tracking-wider text-xs">Owner</th>
+                  <th className="text-left py-4 px-6 font-bold text-muted-foreground uppercase tracking-wider text-xs">Deadline</th>
+                  <th className="text-left py-4 px-6 font-bold text-muted-foreground uppercase tracking-wider text-xs rounded-tr-2xl">Priority</th>
                 </tr>
               </thead>
               <tbody>
                 {actionItems.map((item: any, idx: number) => (
-                  <tr key={idx} className={`border-b border-border ${idx % 2 === 0 ? 'bg-secondary/20' : ''} ${item.isCompleted ? 'opacity-50' : ''}`}>
-                    <td className="py-4 px-4 text-center">
+                  <tr key={idx} className={`border-b border-white/5 transition-colors hover:bg-white/5 ${idx % 2 === 0 ? 'bg-white/[0.02]' : ''} ${item.isCompleted ? 'opacity-40 grayscale' : ''}`}>
+                    <td className="py-5 px-6 text-center">
                       <input 
                         type="checkbox" 
                         checked={!!item.isCompleted} 
                         onChange={() => handleToggleActionItem(idx)}
-                        className="w-5 h-5 accent-primary cursor-pointer transition-transform hover:scale-110"
+                        className="w-5 h-5 accent-emerald-500 cursor-pointer transition-transform hover:scale-110 bg-black/50 border-white/20 rounded"
                       />
                     </td>
-                    <td className={`py-4 px-4 text-foreground ${item.isCompleted ? 'line-through' : ''}`}>{item.task}</td>
-                    <td className="py-4 px-4 text-foreground">{item.owner}</td>
-                    <td className="py-4 px-4 text-foreground text-sm">{item.deadline}</td>
-                    <td className="py-4 px-4">
+                    <td className={`py-5 px-6 text-white font-medium ${item.isCompleted ? 'line-through text-muted-foreground' : ''}`}>{item.task}</td>
+                    <td className="py-5 px-6 text-white/80">{item.owner}</td>
+                    <td className="py-5 px-6 text-white/80 font-mono text-xs">{item.deadline}</td>
+                    <td className="py-5 px-6">
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                           item.priority === 'High'
-                            ? 'bg-destructive/20 text-destructive'
+                            ? 'bg-destructive/20 text-destructive border border-destructive/30'
                             : item.priority === 'Medium'
-                            ? 'bg-yellow-500/20 text-yellow-500'
-                            : 'bg-blue-500/20 text-blue-500'
+                            ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/30'
+                            : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
                         }`}
                       >
                         {item.priority}
@@ -297,21 +316,24 @@ export function AnalysisResults({ data, onBack }: AnalysisResultsProps) {
 
         {/* Knowledge Updates Tab */}
         {activeTab === 'knowledge' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 fade-up max-w-7xl mx-auto" style={{ animationDelay: '0.2s' }}>
             {data.knowledgeGaps.map((gap: any, idx: number) => (
               <InteractiveCard3D key={idx}>
-                <div className="space-y-4">
-                  <h3 className="font-semibold text-foreground text-accent">{gap.topic}</h3>
-                  <p className="text-muted-foreground text-sm">{gap.suggestion}</p>
+                <div className="space-y-3 glass p-5 border-white/5 hover:border-cyan-400/30 transition-colors h-full flex flex-col">
+                  <h3 className="font-bold text-cyan-400 flex items-center gap-2 text-sm">
+                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 glow-pulse"></span>
+                    {gap.topic}
+                  </h3>
+                  <p className="text-white/80 text-xs leading-relaxed flex-1">{gap.suggestion}</p>
                   <Button
                     size="sm"
-                    variant="outline"
+                    variant="ghost"
                     onClick={() => copyToClipboard(gap.suggestion, `gap-${idx}`)}
-                    className="w-full"
+                    className="w-full bg-white/5 hover:bg-white/10 text-white border-white/10"
                   >
                     {copiedId === `gap-${idx}` ? (
                       <>
-                        <Check className="w-4 h-4 mr-2" />
+                        <Check className="w-4 h-4 mr-2 text-emerald-400" />
                         Copied
                       </>
                     ) : (
@@ -329,41 +351,41 @@ export function AnalysisResults({ data, onBack }: AnalysisResultsProps) {
 
         {/* Meeting Chatbot Tab */}
         {activeTab === 'chatbot' && (
-          <div className="border border-border rounded-xl bg-card/50 flex flex-col h-[600px] overflow-hidden shadow-2xl">
+          <div className="glass rounded-xl flex flex-col h-[600px] overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] border-white/10 fade-up" style={{ animationDelay: '0.2s' }}>
             {/* Chat Header */}
-            <div className="p-4 border-b border-border bg-card/80 flex items-center justify-between">
+            <div className="p-4 border-b border-white/10 bg-black/40 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30">
+                <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center border border-primary/30 glow-pulse">
                   <Sparkles className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm text-foreground">Meeting AI Assistant</h3>
-                  <p className="text-xs text-muted-foreground">Ask follow-up questions or draft summaries based on this meeting</p>
+                  <h3 className="font-bold text-sm text-white">Meeting AI Assistant</h3>
+                  <p className="text-xs text-white/60">Ask follow-up questions or draft summaries based on this meeting</p>
                 </div>
               </div>
             </div>
 
             {/* Chat Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gradient-to-b from-transparent to-black/20">
               {chatMessages.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-4">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                    <Bot className="w-6 h-6" />
+                <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-6">
+                  <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-primary glow-pulse">
+                    <Bot className="w-8 h-8" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-foreground mb-1">How can I assist you with this meeting?</h4>
-                    <p className="text-xs text-muted-foreground max-w-md">
+                    <h4 className="font-bold text-xl text-white mb-2">How can I assist you?</h4>
+                    <p className="text-sm text-white/60 max-w-md leading-relaxed">
                       Ask me to draft emails, analyze specific speaker points, explain decisions, or detail high-priority tasks.
                     </p>
                   </div>
 
                   {/* Quick Prompts */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg pt-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-2xl pt-4">
                     {QUICK_PROMPTS.map((prompt, idx) => (
                       <button
                         key={idx}
                         onClick={() => handleSendMessage(prompt)}
-                        className="text-left text-xs p-3 rounded-lg border border-border bg-secondary/30 hover:bg-secondary hover:border-primary/50 text-foreground transition-all duration-200"
+                        className="text-left text-sm p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-primary/50 text-white/90 transition-all duration-300 hover:-translate-y-1"
                       >
                         {prompt}
                       </button>
@@ -374,38 +396,38 @@ export function AnalysisResults({ data, onBack }: AnalysisResultsProps) {
                 chatMessages.map((msg, idx) => (
                   <div
                     key={idx}
-                    className={`flex items-start gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
+                    className={`flex items-start gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
                   >
                     <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center text-xs shrink-0 ${
-                        msg.role === 'user' ? 'bg-accent/20 text-accent' : 'bg-primary/20 text-primary'
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs shrink-0 border ${
+                        msg.role === 'user' ? 'bg-accent/20 text-accent border-accent/30' : 'bg-primary/20 text-primary border-primary/30'
                       }`}
                     >
-                      {msg.role === 'user' ? <UserIcon className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                      {msg.role === 'user' ? <UserIcon className="w-5 h-5" /> : <Bot className="w-5 h-5" />}
                     </div>
 
                     <div
-                      className={`max-w-[80%] rounded-xl p-4 text-sm whitespace-pre-wrap leading-relaxed shadow-sm ${
+                      className={`max-w-[80%] rounded-2xl p-5 text-sm whitespace-pre-wrap leading-relaxed shadow-lg ${
                         msg.role === 'user'
-                          ? 'bg-primary text-primary-foreground rounded-tr-none'
-                          : 'bg-card border border-border text-foreground rounded-tl-none'
+                          ? 'bg-gradient-to-br from-indigo-500 to-indigo-600 text-white rounded-tr-none border border-indigo-400/50'
+                          : 'glass border-white/10 text-white/90 rounded-tl-none bg-black/40'
                       }`}
                     >
                       {msg.content}
 
                       {msg.role === 'assistant' && (
-                        <div className="mt-2 pt-2 border-t border-border/40 flex justify-end">
+                        <div className="mt-4 pt-3 border-t border-white/10 flex justify-end">
                           <button
                             onClick={() => copyToClipboard(msg.content, `chat-${idx}`)}
-                            className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                            className="text-xs text-white/50 hover:text-white flex items-center gap-1.5 transition-colors"
                           >
                             {copiedId === `chat-${idx}` ? (
                               <>
-                                <Check className="w-3 h-3 text-emerald-400" /> Copied
+                                <Check className="w-3.5 h-3.5 text-emerald-400" /> Copied
                               </>
                             ) : (
                               <>
-                                <Copy className="w-3 h-3" /> Copy
+                                <Copy className="w-3.5 h-3.5" /> Copy
                               </>
                             )}
                           </button>
@@ -417,26 +439,26 @@ export function AnalysisResults({ data, onBack }: AnalysisResultsProps) {
               )}
 
               {isSending && (
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary shrink-0">
-                    <Bot className="w-4 h-4" />
+                <div className="flex items-center gap-4 fade-up">
+                  <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary shrink-0 border border-primary/30">
+                    <Bot className="w-5 h-5" />
                   </div>
-                  <div className="bg-card border border-border rounded-xl p-3 text-xs text-muted-foreground flex items-center gap-2">
+                  <div className="glass border-white/10 bg-black/40 rounded-2xl rounded-tl-none p-4 text-sm text-white/60 flex items-center gap-3">
                     <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                    Thinking...
+                    Processing network request...
                   </div>
                 </div>
               )}
             </div>
 
             {/* Chat Input */}
-            <div className="p-3 border-t border-border bg-card/80">
+            <div className="p-4 border-t border-white/10 bg-black/40">
               <form
                 onSubmit={(e) => {
                   e.preventDefault()
                   handleSendMessage()
                 }}
-                className="flex gap-2"
+                className="flex gap-3"
               >
                 <input
                   type="text"
@@ -444,11 +466,13 @@ export function AnalysisResults({ data, onBack }: AnalysisResultsProps) {
                   onChange={(e) => setInputMessage(e.target.value)}
                   placeholder="Ask a question or request a draft based on this meeting..."
                   disabled={isSending}
-                  className="flex-1 bg-background border border-border rounded-lg px-4 py-2 text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                  className="flex-1 glass border-white/10 bg-black/60 px-5 py-3 text-sm text-white placeholder-white/40 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary rounded-xl transition-all"
                 />
-                <Button type="submit" disabled={!inputMessage.trim() || isSending} size="sm">
-                  {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                </Button>
+                <div className="gradient-border rounded-xl">
+                  <Button type="submit" disabled={!inputMessage.trim() || isSending} size="lg" className="h-full bg-background/80 hover:bg-transparent border-none text-white shadow-none px-6">
+                    {isSending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+                  </Button>
+                </div>
               </form>
             </div>
           </div>
@@ -456,9 +480,9 @@ export function AnalysisResults({ data, onBack }: AnalysisResultsProps) {
       </div>
 
       {/* Back Button */}
-      <div className="mt-8 pt-8 border-t border-border">
-        <Button variant="outline" onClick={onBack}>
-          Back to New Analysis
+      <div className="mt-12 pt-8 border-t border-white/10 flex justify-center fade-up" style={{ animationDelay: '0.4s' }}>
+        <Button variant="ghost" onClick={onBack} className="glass text-white/80 hover:text-white border-white/10 hover:bg-white/10 px-8 py-6 h-auto">
+          &larr; Back to Dashboard
         </Button>
       </div>
     </div>

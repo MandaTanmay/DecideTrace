@@ -9,19 +9,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { ObjectId } from 'mongodb'
 import { verifyToken } from '@/lib/auth'
 import { getAnalysesCollection } from '@/models/Analysis'
-import { ChatGroq } from '@langchain/groq'
+import { invokeGroqWithFallback } from '@/src/lib/groq-client'
 import { HumanMessage, SystemMessage, AIMessage } from '@langchain/core/messages'
 
 export const maxDuration = 60
-
-function getGroqClient() {
-  return new ChatGroq({
-    apiKey: process.env.GROQ_API_KEY,
-    model: 'llama-3.3-70b-versatile',
-    temperature: 0.2,
-    maxTokens: 1500,
-  })
-}
 
 export async function POST(
   request: NextRequest,
@@ -128,12 +119,7 @@ RULES FOR YOUR RESPONSES:
     }
 
     // ── Invoke Groq LLM ───────────────────────────────────────────────────
-    const groq = getGroqClient()
-    const response = await groq.invoke(langchainMessages)
-
-    const reply = typeof response.content === 'string'
-      ? response.content
-      : JSON.stringify(response.content)
+    const reply = await invokeGroqWithFallback(langchainMessages, 1500)
 
     return NextResponse.json({ response: reply }, { status: 200 })
   } catch (error) {
