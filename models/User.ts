@@ -7,6 +7,7 @@
 
 import { ObjectId, type Collection } from 'mongodb'
 import { getDB } from '@/lib/mongodb'
+import { encrypt, decrypt } from '@/lib/encryption'
 
 export interface UserDocument {
   _id?: ObjectId
@@ -30,6 +31,7 @@ export interface SafeUser {
 
 /**
  * Convert a MongoDB UserDocument to a client-safe object.
+ * Decrypts encrypted fields if present.
  */
 export function toSafeUser(user: UserDocument): SafeUser {
   return {
@@ -38,6 +40,38 @@ export function toSafeUser(user: UserDocument): SafeUser {
     email: user.email,
     createdAt: user.createdAt.toISOString(),
   }
+}
+
+/**
+ * Encrypt sensitive fields before saving to database
+ */
+export function encryptUserDocument(user: UserDocument): UserDocument {
+  const encrypted = { ...user }
+  
+  // Encrypt reset token if present
+  if (encrypted.resetPasswordToken) {
+    encrypted.resetPasswordToken = encrypt(encrypted.resetPasswordToken)
+  }
+  
+  return encrypted
+}
+
+/**
+ * Decrypt sensitive fields after retrieving from database
+ */
+export function decryptUserDocument(user: UserDocument): UserDocument {
+  const decrypted = { ...user }
+  
+  // Decrypt reset token if present
+  if (decrypted.resetPasswordToken) {
+    try {
+      decrypted.resetPasswordToken = decrypt(decrypted.resetPasswordToken)
+    } catch {
+      // If decryption fails, keep original (might not be encrypted)
+    }
+  }
+  
+  return decrypted
 }
 
 /**

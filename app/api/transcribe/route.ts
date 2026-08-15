@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('[POST /api/transcribe]', error)
     return NextResponse.json(
-      { message: 'An internal server error occurred while processing the audio.' },
+      { message: 'An internal server error occurred.' },
       { status: 500 }
     )
   }

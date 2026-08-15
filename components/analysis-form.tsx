@@ -26,6 +26,8 @@ export function AnalysisForm({ onAnalysisComplete }: AnalysisFormProps) {
   const [loading, setLoading] = useState(false)
   const [completedSteps, setCompletedSteps] = useState<number[]>([])
   const [currentStep, setCurrentStep] = useState<number | null>(null)
+  const [metrics, setMetrics] = useState<any>(null)
+  const [showInspector, setShowInspector] = useState<string | null>(null)
 
   // Audio Upload & Recording State
   const [audioFile, setAudioFile] = useState<File | null>(null)
@@ -228,7 +230,10 @@ export function AnalysisForm({ onAnalysisComplete }: AnalysisFormProps) {
 
       setCurrentStep(6)
       setCompletedSteps([1, 2, 3, 4, 5, 6])
-      await new Promise(resolve => setTimeout(resolve, 400))
+      if (data.metrics) {
+        setMetrics(data.metrics)
+      }
+      await new Promise(resolve => setTimeout(resolve, 800))
 
       onAnalysisComplete(data)
     } catch (error: any) {
@@ -247,38 +252,123 @@ export function AnalysisForm({ onAnalysisComplete }: AnalysisFormProps) {
 
       {loading && (
         <div className="mb-8 space-y-6">
-          {/* 3D Progress Sphere */}
-          <div className="bg-card border border-border rounded-lg p-8 flex justify-center">
-            <div style={{ width: '300px', height: '300px' }}>
-              <SceneCanvas className="w-full h-full">
-                <ProgressSphere progress={completedSteps.length / ANALYSIS_STEPS.length} />
-              </SceneCanvas>
+          {/* Neural Network Loading Animation */}
+          <div className="bg-card border border-border rounded-xl overflow-hidden" style={{ height: 280, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <style>{`
+              @keyframes af-orbit1  { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+              @keyframes af-orbit2  { from{transform:rotate(0deg)} to{transform:rotate(-360deg)} }
+              @keyframes af-orbit3  { from{transform:rotate(45deg)} to{transform:rotate(405deg)} }
+              @keyframes af-pulse   { 0%,100%{opacity:.2;transform:scale(1)} 50%{opacity:.5;transform:scale(1.1)} }
+              @keyframes af-glow    { 0%,100%{box-shadow:0 0 16px rgba(99,102,241,0.5),0 0 40px rgba(99,102,241,0.2)} 50%{box-shadow:0 0 28px rgba(99,102,241,0.9),0 0 70px rgba(99,102,241,0.4)} }
+              @keyframes af-beam    { 0%{opacity:0;transform:scaleX(0)} 50%{opacity:1} 100%{opacity:0;transform:scaleX(1)} }
+              @keyframes af-float   { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+              @keyframes af-dot     { 0%,100%{opacity:.2} 50%{opacity:1} }
+              @keyframes af-scan    { 0%{top:0%;opacity:0} 10%{opacity:1} 90%{opacity:1} 100%{top:100%;opacity:0} }
+            `}</style>
+
+            {/* Background radial glow */}
+            <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse 70% 60% at 50% 50%, rgba(99,102,241,0.08) 0%, transparent 70%)' }} />
+
+            {/* Scan line */}
+            <div style={{ position:'absolute', left:0, right:0, height:1, background:'linear-gradient(90deg, transparent 0%, rgba(99,102,241,0.4) 50%, transparent 100%)', animation:'af-scan 3s ease-in-out infinite' }} />
+
+            {/* Orbit system */}
+            <div style={{ position:'relative', width:220, height:220 }}>
+              {/* Pulse ring 1 */}
+              <div style={{ position:'absolute', inset:-20, borderRadius:'50%', border:'1px solid rgba(99,102,241,0.15)', animation:'af-pulse 3s ease-in-out infinite' }} />
+              {/* Pulse ring 2 */}
+              <div style={{ position:'absolute', inset:-6, borderRadius:'50%', border:'1px solid rgba(99,102,241,0.25)', animation:'af-pulse 2.5s ease-in-out infinite 0.5s' }} />
+
+              {/* Outer orbit — 5 nodes */}
+              <div style={{ position:'absolute', inset:0, borderRadius:'50%', border:'1px dashed rgba(255,255,255,0.07)', animation:'af-orbit1 10s linear infinite' }}>
+                {[0,1,2,3,4].map(i => (
+                  <div key={i} style={{
+                    position:'absolute', width:10, height:10, borderRadius:'50%',
+                    background: ['#3b82f6','#6366f1','#10b981','#f43f5e','#8b5cf6'][i],
+                    boxShadow: `0 0 8px ${['#3b82f6','#6366f1','#10b981','#f43f5e','#8b5cf6'][i]}`,
+                    top: `calc(50% + ${Math.sin(i * 72 * Math.PI/180) * 100}px - 5px)`,
+                    left: `calc(50% + ${Math.cos(i * 72 * Math.PI/180) * 100}px - 5px)`,
+                    animation: `af-dot 1.6s ease-in-out ${i * 0.3}s infinite`
+                  }} />
+                ))}
+              </div>
+
+              {/* Middle orbit — 3 nodes counter */}
+              <div style={{ position:'absolute', inset:30, borderRadius:'50%', border:'1px dashed rgba(255,255,255,0.05)', animation:'af-orbit2 7s linear infinite' }}>
+                {[0,1,2].map(i => (
+                  <div key={i} style={{
+                    position:'absolute', width:8, height:8, borderRadius:'50%',
+                    background: ['#06b6d4','#a855f7','#f59e0b'][i],
+                    boxShadow: `0 0 6px ${['#06b6d4','#a855f7','#f59e0b'][i]}`,
+                    top: `calc(50% + ${Math.sin(i * 120 * Math.PI/180) * 65}px - 4px)`,
+                    left: `calc(50% + ${Math.cos(i * 120 * Math.PI/180) * 65}px - 4px)`,
+                    animation: `af-dot 2s ease-in-out ${i * 0.4}s infinite`
+                  }} />
+                ))}
+              </div>
+
+              {/* Inner orbit — 2 nodes */}
+              <div style={{ position:'absolute', inset:58, borderRadius:'50%', border:'1px dashed rgba(255,255,255,0.08)', animation:'af-orbit3 5s linear infinite' }}>
+                {[0,1].map(i => (
+                  <div key={i} style={{
+                    position:'absolute', width:6, height:6, borderRadius:'50%',
+                    background: ['#ec4899','#14b8a6'][i],
+                    boxShadow: `0 0 6px ${['#ec4899','#14b8a6'][i]}`,
+                    top: `calc(50% + ${Math.sin(i * 180 * Math.PI/180) * 32}px - 3px)`,
+                    left: `calc(50% + ${Math.cos(i * 180 * Math.PI/180) * 32}px - 3px)`,
+                    animation: `af-dot 1.4s ease-in-out ${i * 0.5}s infinite`
+                  }} />
+                ))}
+              </div>
+
+              {/* Core */}
+              <div style={{
+                position:'absolute', inset:88, borderRadius:'50%',
+                background:'radial-gradient(circle, #fff 0%, rgba(180,180,255,0.9) 40%, rgba(99,102,241,0.6) 100%)',
+                animation:'af-glow 2s ease-in-out infinite, af-float 3s ease-in-out infinite',
+              }} />
+            </div>
+
+            {/* Progress bar */}
+            <div style={{ position:'absolute', bottom:20, left:40, right:40 }}>
+              <div style={{ height:2, background:'rgba(255,255,255,0.07)', borderRadius:4, overflow:'hidden' }}>
+                <div style={{
+                  height:'100%', borderRadius:4,
+                  background:'linear-gradient(90deg, #6366f1, #3b82f6, #10b981)',
+                  width: `${Math.max(5, (completedSteps.length / ANALYSIS_STEPS.length) * 100)}%`,
+                  transition:'width 0.8s ease',
+                  boxShadow:'0 0 8px rgba(99,102,241,0.8)'
+                }} />
+              </div>
+              <p style={{ textAlign:'center', marginTop:8, fontSize:12, color:'rgba(255,255,255,0.4)', letterSpacing:'0.08em' }}>
+                {completedSteps.length} / {ANALYSIS_STEPS.length} agents complete
+              </p>
             </div>
           </div>
 
-          {/* Analysis Steps */}
-          <div className="bg-card border border-border rounded-lg p-6">
-            <h2 className="text-lg font-semibold mb-4">Processing your analysis...</h2>
-            <div className="space-y-3">
-              {ANALYSIS_STEPS.map((step) => (
-                <div key={step.id} className="flex items-start gap-3 group">
-                  <div className="mt-1">
-                    {completedSteps.includes(step.id) ? (
-                      <CheckCircle2 className="w-5 h-5 text-primary animate-bounce" />
-                    ) : currentStep === step.id ? (
-                      <Loader2 className="w-5 h-5 text-accent animate-spin" />
-                    ) : (
-                      <div className="w-5 h-5 rounded-full border-2 border-muted group-hover:border-primary transition-colors" />
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <p className={completedSteps.includes(step.id) ? 'text-foreground' : 'text-muted-foreground'}>
-                      {step.label}
-                    </p>
-                    <p className="text-xs text-muted-foreground">{step.agent}</p>
-                  </div>
-                </div>
-              ))}
+        </div>
+      )}
+
+      {/* State Payload Inspector Modal */}
+      {showInspector && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-card border border-border rounded-xl w-full max-w-2xl overflow-hidden shadow-2xl">
+            <div className="flex items-center justify-between p-4 border-b border-border bg-muted/30">
+              <h3 className="font-semibold font-mono text-sm">State Payload Inspector: {showInspector}</h3>
+              <Button variant="ghost" size="icon" onClick={() => setShowInspector(null)} className="h-8 w-8"><X className="w-4 h-4" /></Button>
+            </div>
+            <div className="p-4 bg-black/50 text-emerald-400 font-mono text-xs overflow-auto max-h-96">
+              <pre>
+{`{
+  "node": "${showInspector}",
+  "status": "COMPLETED",
+  "latencyMs": ${metrics ? metrics[`${showInspector}Ms`] : 0},
+  "diff": {
+    "status": "State merged successfully",
+    "payload_size_bytes": Math.floor(Math.random() * 5000 + 1000)
+  }
+}`}
+              </pre>
             </div>
           </div>
         </div>
@@ -441,6 +531,34 @@ export function AnalysisForm({ onAnalysisComplete }: AnalysisFormProps) {
             </Button>
           </div>
         </form>
+      )}
+    </div>
+  )
+}
+
+function AgentNode({ id, name, step, currentStep, completedSteps, ms, onClick }: any) {
+  const isCompleted = completedSteps.includes(step)
+  const isRunning = currentStep === step
+  const isIdle = !isCompleted && !isRunning
+
+  let statusColor = 'border-muted bg-card text-muted-foreground'
+  if (isRunning) statusColor = 'border-blue-500 bg-blue-500/10 text-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]'
+  if (isCompleted) statusColor = 'border-emerald-500 bg-emerald-500/10 text-emerald-500'
+
+  return (
+    <div 
+      onClick={isCompleted ? onClick : undefined}
+      className={`relative w-40 flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all duration-300 ${statusColor} ${isCompleted ? 'cursor-pointer hover:scale-105 hover:bg-emerald-500/20' : ''}`}
+    >
+      <span className="text-xs font-bold text-center leading-tight mb-1">{name}</span>
+      
+      {isIdle && <div className="w-2 h-2 rounded-full bg-muted-foreground/50 mt-1" />}
+      {isRunning && <Loader2 className="w-4 h-4 animate-spin mt-1" />}
+      {isCompleted && (
+        <div className="flex items-center gap-1 mt-1">
+          <CheckCircle2 className="w-3 h-3" />
+          {ms !== undefined && <span className="text-[10px] font-mono">{ms}ms</span>}
+        </div>
       )}
     </div>
   )

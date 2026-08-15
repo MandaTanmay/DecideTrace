@@ -83,10 +83,10 @@ export async function GET(request: NextRequest) {
 
     const list = docs.map(toAnalysisListItem)
     return NextResponse.json({ analyses: list }, { status: 200 })
-  } catch (error: any) {
+  } catch (error) {
     console.error('[GET /api/analyses]', error)
     return NextResponse.json(
-      { message: 'An internal server error occurred.', error: error?.message || String(error) }, 
+      { message: 'An internal server error occurred.' }, 
       { status: 500 }
     )
   }
@@ -119,6 +119,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'Existing notes are required.' }, { status: 400 })
     }
 
+    // ── Input size limits (prevent DoS attacks) ────────────────────────────
+    const MAX_TRANSCRIPT_SIZE = 1 * 1024 * 1024 // 1MB
+    const MAX_NOTES_SIZE = 512 * 1024 // 512KB
+
+    if (transcript.length > MAX_TRANSCRIPT_SIZE) {
+      return NextResponse.json({ message: 'Transcript exceeds maximum size limit (1MB).' }, { status: 400 })
+    }
+
+    if (existingNotes.length > MAX_NOTES_SIZE) {
+      return NextResponse.json({ message: 'Existing notes exceed maximum size limit (512KB).' }, { status: 400 })
+    }
+
     // ── Load past analyses for historical context ──────────────────────────
     const analysesCollection = await getAnalysesCollection()
     const pastAnalyses = await analysesCollection
@@ -146,9 +158,40 @@ export async function POST(request: NextRequest) {
       finalReport: null,
     }
 
-    console.log('[POST /api/analyses] Starting LangGraph pipeline...')
-    const finalState = await graph.invoke(initialState)
-    console.log('[POST /api/analyses] Pipeline complete.')
+    console.log('[POST /api/analyses] Starting LangGraph pipeline (streamed for telemetry)...')
+    const startTime = Date.now()
+    const metrics = {
+      agent1Ms: 0,
+      agent2Ms: 0,
+      agent3Ms: 0,
+      agent4Ms: 0,
+      agent5Ms: 0,
+      totalMs: 0,
+    }
+
+    const stream = await graph.stream(initialState)
+    let finalState = initialState as any
+
+    for await (const chunk of stream) {
+      const now = Date.now()
+      const elapsed = now - startTime
+      
+      // Update state and record latency per agent
+      for (const [nodeName, stateUpdate] of Object.entries(chunk)) {
+        finalState = { ...finalState, ...stateUpdate as any }
+        
+        switch (nodeName) {
+          case 'meetingAnalyzer': metrics.agent1Ms = elapsed; break;
+          case 'knowledgeIndexer': metrics.agent2Ms = elapsed; break;
+          case 'conflictDetector': metrics.agent3Ms = elapsed; break;
+          case 'actionExtractor': metrics.agent4Ms = elapsed; break;
+          case 'knowledgeUpdater': metrics.agent5Ms = elapsed; break;
+        }
+      }
+    }
+    
+    metrics.totalMs = Date.now() - startTime
+    console.log(`[POST /api/analyses] Pipeline complete in ${metrics.totalMs}ms.`)
 
     // ── Extract results from final state ──────────────────────────────────
     const meetingAnalysis = finalState.meetingAnalysis ?? {
@@ -164,6 +207,7 @@ export async function POST(request: NextRequest) {
       conflicts: finalState.conflicts ?? [],
       actionItems: finalState.actionItems ?? [],
       knowledgeUpdates: finalState.knowledgeUpdates ?? [],
+      metrics,
     }
 
     // ── Auto-generate title ───────────────────────────────────────────────
@@ -197,7 +241,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('[POST /api/analyses]', error)
     return NextResponse.json(
-      { message: 'Pipeline failed. Please try again.' },
+      { message: 'An internal server error occurred.' },
       { status: 500 }
     )
   }

@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
   try {
     // ── Rate Limiting ─────────────────────────────────────────────────────
     const ip = request.headers.get('x-forwarded-for') || '127.0.0.1'
-    if (checkRateLimit(`signup_${ip}`, 5, 60 * 1000)) { // 5 attempts per minute
+    if (await checkRateLimit(`signup_${ip}`, 5, 60 * 1000)) { // 5 attempts per minute
       return NextResponse.json(
         { message: 'Too many signup attempts. Please try again in a minute.' },
         { status: 429 }
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
     const token = generateToken(safeUser.id)
 
     const response = NextResponse.json(
-      { user: safeUser, token },
+      { user: safeUser },
       { status: 201 }
     )
 

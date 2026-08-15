@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
   try {
     // ── Rate Limiting ─────────────────────────────────────────────────────
     const ip = request.headers.get('x-forwarded-for') || '127.0.0.1'
-    if (checkRateLimit(`reset_${ip}`, 5, 60 * 1000)) {
+    if (await checkRateLimit(`reset_${ip}`, 5, 60 * 1000)) {
       return NextResponse.json(
         { message: 'Too many reset attempts. Please try again in a minute.' },
         { status: 429 }

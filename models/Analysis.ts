@@ -39,12 +39,22 @@ export interface MeetingAnalysisResult {
   speakers: string[]
 }
 
+export interface PipelineMetrics {
+  agent1Ms: number
+  agent2Ms: number
+  agent3Ms: number
+  agent4Ms: number
+  agent5Ms: number
+  totalMs: number
+}
+
 export interface AnalysisResults {
   summary: string
   decisions: string[]
   conflicts: ConflictResult[]
   actionItems: ActionItem[]
   knowledgeUpdates: KnowledgeUpdate[]
+  metrics?: PipelineMetrics
 }
 
 // ---------------------------------------------------------------------------
@@ -89,6 +99,7 @@ export function mapResultsForClient(results: any) {
       topic: u.topic || 'Unknown Topic',
       suggestion: u.suggestedNote || '',
     })),
+    metrics: results?.metrics,
   }
 }
 

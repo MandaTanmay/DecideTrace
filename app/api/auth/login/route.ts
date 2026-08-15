@@ -9,12 +9,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { comparePassword, generateToken } from '@/lib/auth'
 import { getUsersCollection, toSafeUser } from '@/models/User'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { logAuthSuccess, logAuthFailure, getClientIP, getUserAgent } from '@/lib/audit-logger'
 
 export async function POST(request: NextRequest) {
   try {
     // ── Rate Limiting ─────────────────────────────────────────────────────
     const ip = request.headers.get('x-forwarded-for') || '127.0.0.1'
-    if (checkRateLimit(`login_${ip}`, 5, 60 * 1000)) { // 5 attempts per minute
+    const userAgent = getUserAgent(request)
+    
+    if (await checkRateLimit(`login_${ip}`, 5, 60 * 1000)) { // 5 attempts per minute
       return NextResponse.json(
         { message: 'Too many login attempts. Please try again in a minute.' },
         { status: 429 }
@@ -44,17 +47,19 @@ export async function POST(request: NextRequest) {
     const user = await users.findOne({ email: email.toLowerCase().trim() })
 
     if (!user) {
+      logAuthFailure(email, ip, 'User not found', userAgent)
       return NextResponse.json(
-        { message: 'No account found with this email address.' },
-        { status: 404 }
+        { message: 'Invalid email or password.' },
+        { status: 401 }
       )
     }
 
     // ── Verify password ───────────────────────────────────────────────────
     const isValid = await comparePassword(password, user.passwordHash)
     if (!isValid) {
+      logAuthFailure(email, ip, 'Invalid password', userAgent)
       return NextResponse.json(
-        { message: 'Incorrect password.' },
+        { message: 'Invalid email or password.' },
         { status: 401 }
       )
     }
@@ -63,7 +68,10 @@ export async function POST(request: NextRequest) {
     const safeUser = toSafeUser(user)
     const token = generateToken(safeUser.id)
 
-    const response = NextResponse.json({ user: safeUser, token }, { status: 200 })
+    // Log successful authentication
+    logAuthSuccess(safeUser.id, ip, userAgent)
+
+    const response = NextResponse.json({ user: safeUser }, { status: 200 })
 
     response.cookies.set('auth_token', token, {
       httpOnly: true,

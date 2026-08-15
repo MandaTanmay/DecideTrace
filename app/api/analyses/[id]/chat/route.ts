@@ -136,10 +136,10 @@ RULES FOR YOUR RESPONSES:
       : JSON.stringify(response.content)
 
     return NextResponse.json({ response: reply }, { status: 200 })
-  } catch (error: any) {
+  } catch (error) {
     console.error('[POST /api/analyses/[id]/chat]', error)
     return NextResponse.json(
-      { message: 'Failed to generate AI chat response.', error: error?.message || String(error) },
+      { message: 'An internal server error occurred.' },
       { status: 500 }
     )
   }

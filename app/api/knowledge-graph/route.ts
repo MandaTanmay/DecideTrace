@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { ObjectId } from 'mongodb'
 import { verifyToken } from '@/lib/auth'
 import { getAnalysesCollection } from '@/models/Analysis'
+import { maskGraphData } from '@/lib/data-masking'
 import crypto from 'crypto'
 
 export async function GET(request: NextRequest) {
@@ -21,10 +22,10 @@ export async function GET(request: NextRequest) {
 
     const nodeSet = new Set<string>()
 
-    const addNode = (id: string, name: string, group: number, val: number = 1) => {
+    const addNode = (id: string, name: string, group: number, val: number = 1, desc: string = '') => {
       if (!nodeSet.has(id)) {
         nodeSet.add(id)
-        nodes.push({ id, name, group, val })
+        nodes.push({ id, name, group, val, desc })
       }
     }
 
@@ -32,33 +33,36 @@ export async function GET(request: NextRequest) {
       const meetingId = analysis._id!.toHexString()
       
       // Meeting Node
-      addNode(meetingId, analysis.title, 1, 15) // Group 1: Meetings, size 15
+      addNode(meetingId, analysis.title, 1, 15, `Meeting Date: ${new Date(analysis.createdAt).toLocaleDateString()}`)
 
       // Decisions
       analysis.results.decisions?.forEach(decision => {
         const decisionId = 'dec_' + crypto.createHash('md5').update(decision).digest('hex').substring(0, 8)
-        addNode(decisionId, decision, 2, 5) // Group 2: Decisions
+        addNode(decisionId, decision.length > 50 ? decision.substring(0, 50) + '...' : decision, 2, 5, decision)
         links.push({ source: meetingId, target: decisionId, type: 'produced' })
       })
 
       // Topics / Knowledge Updates
       analysis.results.knowledgeUpdates?.forEach(update => {
         const topicId = 'topic_' + update.topic.toLowerCase().replace(/[^a-z0-9]/g, '_')
-        addNode(topicId, update.topic, 3, 8) // Group 3: Topics
+        addNode(topicId, update.topic, 3, 8, update.suggestedNote)
         links.push({ source: meetingId, target: topicId, type: 'discussed' })
       })
 
-      // Conflicts (We highlight them by creating a special node or a red link)
+      // Conflicts
       analysis.results.conflicts?.forEach(conflict => {
         const conflictId = 'conf_' + crypto.createHash('md5').update(conflict.decision).digest('hex').substring(0, 8)
-        addNode(conflictId, `Conflict: ${conflict.decision}`, 4, 10) // Group 4: Conflicts
-        links.push({ source: meetingId, target: conflictId, type: 'conflict' })
+        addNode(conflictId, `Conflict detected`, 4, 10, `${conflict.decision}\nvs\n${conflict.contradictingNote}`)
+        links.push({ source: meetingId, target: conflictId, type: 'conflict', strength: conflict.confidence || 0.8 })
       })
     })
 
-    return NextResponse.json({ nodes, links }, { status: 200 })
+    // Apply data masking to protect sensitive information
+    const maskedData = maskGraphData({ nodes, links })
+
+    return NextResponse.json(maskedData, { status: 200 })
   } catch (error) {
     console.error('[GET /api/knowledge-graph]', error)
-    return NextResponse.json({ message: 'Failed to generate graph data.' }, { status: 500 })
+    return NextResponse.json({ message: 'An internal server error occurred.' }, { status: 500 })
   }
 }

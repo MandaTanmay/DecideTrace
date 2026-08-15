@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
   try {
     // ── Rate Limiting ─────────────────────────────────────────────────────
     const ip = request.headers.get('x-forwarded-for') || '127.0.0.1'
-    if (checkRateLimit(`forgot_${ip}`, 5, 60 * 1000)) {
+    if (await checkRateLimit(`forgot_${ip}`, 5, 60 * 1000)) {
       return NextResponse.json(
         { message: 'Too many requests. Please try again in a minute.' },
         { status: 429 }
@@ -57,14 +57,14 @@ export async function POST(request: NextRequest) {
       }
     )
 
-    const devResetUrl = `/reset-password?token=${resetToken}`
-    console.log(`[Forgot Password] Reset URL for ${normalizedEmail}: ${devResetUrl}`)
+    // In production, send email with reset link here
+    // For development, log token to console (remove in production)
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[Forgot Password] Reset token for ${normalizedEmail}: ${resetToken}`)
+    }
 
     return NextResponse.json(
-      {
-        message: genericSuccessMessage,
-        devResetUrl, // Convenience for local testing
-      },
+      { message: genericSuccessMessage },
       { status: 200 }
     )
   } catch (error) {
