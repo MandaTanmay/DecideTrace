@@ -57,14 +57,16 @@ export async function POST(request: NextRequest) {
       }
     )
 
-    // In production, send email with reset link here
-    // For development, log token to console (remove in production)
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`[Forgot Password] Reset token for ${normalizedEmail}: ${resetToken}`)
-    }
+    const origin = request.headers.get('origin') || request.nextUrl.origin || 'http://localhost:3000'
+    const resetUrl = `${origin}/reset-password?token=${resetToken}`
+
+    console.log(`[Forgot Password] Reset URL for ${normalizedEmail}: ${resetUrl}`)
 
     return NextResponse.json(
-      { message: genericSuccessMessage },
+      { 
+        message: genericSuccessMessage,
+        devResetUrl: resetUrl
+      },
       { status: 200 }
     )
   } catch (error) {
