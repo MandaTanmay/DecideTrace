@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { ArrowRight, Brain, Zap, Target, BookOpen, ChevronRight } from 'lucide-react'
+import { ArrowRight, Workflow, Zap, Target, BookOpen, ChevronRight, Brain } from 'lucide-react'
 import { InteractiveCard3D } from '@/components/3d/interactive-card-3d'
 import { AnimatedBackground } from '@/components/3d/animated-background'
 import { useEffect, useState } from 'react'
@@ -21,7 +21,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2 fade-up" style={{ animationDelay: '0.1s' }}>
             <div className="w-8 h-8 rounded-xl gradient-border flex items-center justify-center glow-pulse bg-background">
-              <Brain className="w-5 h-5 text-primary" />
+              <Workflow className="w-5 h-5 text-primary" />
             </div>
             <span className="text-xl font-bold tracking-tight text-white">DecideTrace</span>
           </div>
@@ -197,7 +197,7 @@ export default function LandingPage() {
       <footer className="border-t border-white/10 glass bg-black/60 py-12 px-4 sm:px-6 lg:px-8 relative z-10 rounded-none">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-2">
-            <Brain className="w-5 h-5 text-primary" />
+            <Workflow className="w-5 h-5 text-primary" />
             <span className="font-bold tracking-tight text-white">DecideTrace</span>
           </div>
           <div className="text-muted-foreground text-sm">

@@ -4,7 +4,7 @@ import { useState, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Brain, ArrowLeft, Loader2, KeyRound, AlertCircle } from 'lucide-react'
+import { Workflow, ArrowLeft, Loader2, KeyRound, AlertCircle } from 'lucide-react'
 import { AnimatedBackground } from '@/components/3d/animated-background'
 import { toast } from 'sonner'
 
@@ -172,7 +172,7 @@ export default function ResetPasswordPage() {
         <div className="text-center mb-8 animate-fade-in">
           <Link href="/" className="flex items-center justify-center gap-2 mb-6 group">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Brain className="w-5 h-5 text-white" />
+              <Workflow className="w-5 h-5 text-white" />
             </div>
             <span className="text-2xl font-bold group-hover:text-accent transition-colors">DecideTrace</span>
           </Link>

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Plus, LogOut, Brain, Network, Pencil, Trash2, Check, X } from 'lucide-react'
+import { Plus, LogOut, Workflow, Network, Pencil, Trash2, Check, X } from 'lucide-react'
 
 export interface User {
   name: string
@@ -117,7 +117,7 @@ export function DashboardSidebar({
       <div className="p-6 border-b border-white/5 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3 group">
           <div className="w-8 h-8 rounded-lg gradient-border flex items-center justify-center glow-pulse bg-background/50 group-hover:scale-110 transition-transform">
-            <Brain className="w-5 h-5 text-primary" />
+            <Workflow className="w-5 h-5 text-primary" />
           </div>
           <span className="text-xl font-bold tracking-tight text-white group-hover:text-primary transition-colors">DecideTrace</span>
         </Link>
