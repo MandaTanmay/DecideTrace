@@ -11,9 +11,8 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'MeetMind - AI Meeting Analysis',
-  description: 'Intelligent meeting analysis platform that detects conflicts, extracts action items, and identifies knowledge gaps',
-  generator: 'v0.app',
+  title: 'DecideTrace - AI Meeting Analysis & Decision Intelligence',
+  description: 'Multi-agent LangGraph pipeline analyzing meeting transcripts, detecting conflicts against notes, extracting tasks, and generating knowledge updates.'
 }
 
 export default function RootLayout({

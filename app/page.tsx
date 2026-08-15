@@ -23,7 +23,7 @@ export default function LandingPage() {
             <div className="w-8 h-8 rounded-xl gradient-border flex items-center justify-center glow-pulse bg-background">
               <Brain className="w-5 h-5 text-primary" />
             </div>
-            <span className="text-xl font-bold tracking-tight text-white">MeetMind</span>
+            <span className="text-xl font-bold tracking-tight text-white">DecideTrace</span>
           </div>
           <div className="flex gap-3 fade-up" style={{ animationDelay: '0.2s' }}>
             <Link href="/login">
@@ -183,11 +183,11 @@ export default function LandingPage() {
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10" />
           <h2 className="text-4xl font-bold mb-6 text-white relative z-10">Stop losing knowledge.</h2>
           <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto relative z-10">
-            Join the elite engineering teams using MeetMind to maintain architectural integrity and accelerate shipping.
+            Join the elite engineering teams using DecideTrace to maintain architectural integrity and accelerate shipping.
           </p>
           <Link href="/signup">
             <Button size="lg" className="h-14 px-10 text-lg bg-white text-black hover:bg-gray-200 hover:scale-105 transition-all duration-300 relative z-10 shadow-[0_0_30px_rgba(255,255,255,0.3)]">
-              Deploy MeetMind
+              Deploy DecideTrace
             </Button>
           </Link>
         </div>
@@ -198,10 +198,10 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-2">
             <Brain className="w-5 h-5 text-primary" />
-            <span className="font-bold tracking-tight text-white">MeetMind</span>
+            <span className="font-bold tracking-tight text-white">DecideTrace</span>
           </div>
           <div className="text-muted-foreground text-sm">
-            &copy; {new Date().getFullYear()} MeetMind Intelligence. All systems operational.
+            &copy; {new Date().getFullYear()} DecideTrace Intelligence. All systems operational.
           </div>
         </div>
       </footer>

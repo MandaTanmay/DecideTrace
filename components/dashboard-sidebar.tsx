@@ -119,7 +119,7 @@ export function DashboardSidebar({
           <div className="w-8 h-8 rounded-lg gradient-border flex items-center justify-center glow-pulse bg-background/50 group-hover:scale-110 transition-transform">
             <Brain className="w-5 h-5 text-primary" />
           </div>
-          <span className="text-xl font-bold tracking-tight text-white group-hover:text-primary transition-colors">MeetMind</span>
+          <span className="text-xl font-bold tracking-tight text-white group-hover:text-primary transition-colors">DecideTrace</span>
         </Link>
       </div>
 

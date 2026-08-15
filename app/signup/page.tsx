@@ -70,7 +70,7 @@ export default function SignupPage() {
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center group-hover:scale-110 transition-transform">
               <Brain className="w-5 h-5 text-white" />
             </div>
-            <span className="text-2xl font-bold group-hover:text-accent transition-colors">MeetMind</span>
+            <span className="text-2xl font-bold group-hover:text-accent transition-colors">DecideTrace</span>
           </Link>
           <h1 className="text-2xl font-bold mb-2">Create Account</h1>
           <p className="text-muted-foreground">Start analyzing your meetings today</p>

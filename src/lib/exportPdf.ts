@@ -78,7 +78,7 @@ export function generateAnalysisPDF(data: AnalysisResult): void {
 
   // ── Page 1: Header ────────────────────────────────────────────────────────
   setFont('bold', 18)
-  doc.text('MeetMind', MARGIN, currentY)
+  doc.text('DecideTrace', MARGIN, currentY)
   currentY += 10
 
   const fullTitle = (data.summary && data.summary.split('.')[0]) || data.title || 'Meeting Analysis'
@@ -255,16 +255,17 @@ export function generateAnalysisPDF(data: AnalysisResult): void {
   }
 
   // ── Generate Filename and Download ──────────────────────────────────────
-  // Filename format: meetmind-[first-5-words-of-title-hyphenated]-[YYYY-MM-DD].pdf
+  // Filename format: decidetrace-[first-5-words-of-title-hyphenated]-[YYYY-MM-DD].pdf
   const titleWords = (data.title || 'analysis')
     .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, '')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
     .split(/\s+/)
     .slice(0, 5)
-    .join('-')
+    .join('-') || 'report'
   
   const dateStrFileName = new Date().toISOString().split('T')[0]
-  const fileName = `meetmind-${titleWords}-${dateStrFileName}.pdf`
+  const fileName = `decidetrace-${titleWords}-${dateStrFileName}.pdf`
 
   doc.save(fileName)
 }

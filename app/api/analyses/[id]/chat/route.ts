@@ -68,7 +68,7 @@ export async function POST(
       ? analysis.results.conflicts.map((c) => `- Decision: "${c.decision}" contradicts note: "${c.contradictingNote}" (${c.explanation})`).join('\n')
       : 'None detected'
 
-    const systemPrompt = `You are MeetMind Assistant, an intelligent meeting analyst and advisor.
+    const systemPrompt = `You are DecideTrace Assistant, an intelligent meeting analyst and advisor.
 You are helping the user discuss and explore their meeting analysis.
 
 MEETING DETAILS:
