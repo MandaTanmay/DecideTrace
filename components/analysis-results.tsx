@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Check, Copy, AlertCircle, CheckCircle2, Download } from 'lucide-react'
+import { Check, Copy, AlertCircle, CheckCircle2, Download, MessageSquare, Send, Sparkles, Bot, User as UserIcon, Loader2 } from 'lucide-react'
 import { InteractiveCard3D } from '@/components/3d/interactive-card-3d'
 import { generateAnalysisPDF } from '@/src/lib/exportPdf'
 import { toast } from 'sonner'
@@ -14,14 +14,25 @@ interface AnalysisResultsProps {
 }
 
 export function AnalysisResults({ data, onBack }: AnalysisResultsProps) {
-  const [activeTab, setActiveTab] = useState<'summary' | 'conflicts' | 'action-items' | 'knowledge'>('summary')
+  const [activeTab, setActiveTab] = useState<'summary' | 'conflicts' | 'action-items' | 'knowledge' | 'chatbot'>('summary')
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [isExporting, setIsExporting] = useState(false)
   const [actionItems, setActionItems] = useState<any[]>(data.actionItems || [])
 
+  // Chatbot State per Report ID (persistent across report switches)
+  const [chatHistories, setChatHistories] = useState<
+    Record<string, Array<{ role: 'user' | 'assistant'; content: string }>>
+  >({})
+  const [inputMessage, setInputMessage] = useState('')
+  const [isSending, setIsSending] = useState(false)
+
+  const activeReportId = data?.id || 'temp'
+  const chatMessages = chatHistories[activeReportId] || []
+
   useEffect(() => {
-    setActionItems(data.actionItems || [])
-  }, [data.actionItems])
+    setActionItems(data?.actionItems || [])
+    setInputMessage('')
+  }, [data?.id, data?.summary])
 
   const handleToggleActionItem = async (index: number) => {
     if (!data.id) {
@@ -53,6 +64,55 @@ export function AnalysisResults({ data, onBack }: AnalysisResultsProps) {
     }
   }
 
+  const handleSendMessage = async (promptText?: string) => {
+    const textToSend = promptText || inputMessage
+    if (!textToSend.trim() || isSending) return
+
+    if (!data.id) {
+      toast.error("Save or select an analysis to use the AI chatbot.")
+      return
+    }
+
+    const currentHistory = chatHistories[activeReportId] || []
+    const userMsg = { role: 'user' as const, content: textToSend.trim() }
+    const updatedHistory = [...currentHistory, userMsg]
+
+    // Save user message immediately in report history map
+    setChatHistories((prev) => ({
+      ...prev,
+      [activeReportId]: updatedHistory,
+    }))
+
+    if (!promptText) setInputMessage('')
+    setIsSending(true)
+
+    try {
+      const response = await fetch(`/api/analyses/${data.id}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: textToSend.trim(), messages: updatedHistory }),
+      })
+
+      const resData = await response.json()
+      if (!response.ok) throw new Error(resData.message || 'Failed to generate response')
+
+      const finalHistory = [
+        ...updatedHistory,
+        { role: 'assistant' as const, content: resData.response },
+      ]
+
+      setChatHistories((prev) => ({
+        ...prev,
+        [activeReportId]: finalHistory,
+      }))
+    } catch (err: any) {
+      console.error('Chat error:', err)
+      toast.error(err.message || 'Failed to send message.')
+    } finally {
+      setIsSending(false)
+    }
+  }
+
   const copyToClipboard = (text: string, id: string) => {
     navigator.clipboard.writeText(text)
     setCopiedId(id)
@@ -76,7 +136,15 @@ export function AnalysisResults({ data, onBack }: AnalysisResultsProps) {
     { id: 'summary', label: 'Summary' },
     { id: 'conflicts', label: `Conflicts (${data.conflicts.length})`, badge: true, badgeColor: 'text-destructive' },
     { id: 'action-items', label: 'Action Items' },
-    { id: 'knowledge', label: 'Knowledge Updates' }
+    { id: 'knowledge', label: 'Knowledge Updates' },
+    { id: 'chatbot', label: 'Meeting Chatbot 💬' }
+  ]
+
+  const QUICK_PROMPTS = [
+    '✉️ Draft a professional email summary for stakeholders',
+    '📌 List high-priority tasks with assigned owners',
+    '⚠️ Explain detected conflicts in detail',
+    '💡 What were the key technical decisions made?'
   ]
 
   return (
@@ -98,12 +166,12 @@ export function AnalysisResults({ data, onBack }: AnalysisResultsProps) {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-border mb-8 flex gap-1">
+      <div className="border-b border-border mb-8 flex gap-1 overflow-x-auto">
         {TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
-            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors shrink-0 ${
               activeTab === tab.id
                 ? 'border-primary text-primary'
                 : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -256,6 +324,133 @@ export function AnalysisResults({ data, onBack }: AnalysisResultsProps) {
                 </div>
               </InteractiveCard3D>
             ))}
+          </div>
+        )}
+
+        {/* Meeting Chatbot Tab */}
+        {activeTab === 'chatbot' && (
+          <div className="border border-border rounded-xl bg-card/50 flex flex-col h-[600px] overflow-hidden shadow-2xl">
+            {/* Chat Header */}
+            <div className="p-4 border-b border-border bg-card/80 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-foreground">Meeting AI Assistant</h3>
+                  <p className="text-xs text-muted-foreground">Ask follow-up questions or draft summaries based on this meeting</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Chat Messages */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {chatMessages.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-4">
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                    <Bot className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-foreground mb-1">How can I assist you with this meeting?</h4>
+                    <p className="text-xs text-muted-foreground max-w-md">
+                      Ask me to draft emails, analyze specific speaker points, explain decisions, or detail high-priority tasks.
+                    </p>
+                  </div>
+
+                  {/* Quick Prompts */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg pt-2">
+                    {QUICK_PROMPTS.map((prompt, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => handleSendMessage(prompt)}
+                        className="text-left text-xs p-3 rounded-lg border border-border bg-secondary/30 hover:bg-secondary hover:border-primary/50 text-foreground transition-all duration-200"
+                      >
+                        {prompt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                chatMessages.map((msg, idx) => (
+                  <div
+                    key={idx}
+                    className={`flex items-start gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
+                  >
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-xs shrink-0 ${
+                        msg.role === 'user' ? 'bg-accent/20 text-accent' : 'bg-primary/20 text-primary'
+                      }`}
+                    >
+                      {msg.role === 'user' ? <UserIcon className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                    </div>
+
+                    <div
+                      className={`max-w-[80%] rounded-xl p-4 text-sm whitespace-pre-wrap leading-relaxed shadow-sm ${
+                        msg.role === 'user'
+                          ? 'bg-primary text-primary-foreground rounded-tr-none'
+                          : 'bg-card border border-border text-foreground rounded-tl-none'
+                      }`}
+                    >
+                      {msg.content}
+
+                      {msg.role === 'assistant' && (
+                        <div className="mt-2 pt-2 border-t border-border/40 flex justify-end">
+                          <button
+                            onClick={() => copyToClipboard(msg.content, `chat-${idx}`)}
+                            className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                          >
+                            {copiedId === `chat-${idx}` ? (
+                              <>
+                                <Check className="w-3 h-3 text-emerald-400" /> Copied
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3 h-3" /> Copy
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+
+              {isSending && (
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary shrink-0">
+                    <Bot className="w-4 h-4" />
+                  </div>
+                  <div className="bg-card border border-border rounded-xl p-3 text-xs text-muted-foreground flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                    Thinking...
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Chat Input */}
+            <div className="p-3 border-t border-border bg-card/80">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  handleSendMessage()
+                }}
+                className="flex gap-2"
+              >
+                <input
+                  type="text"
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  placeholder="Ask a question or request a draft based on this meeting..."
+                  disabled={isSending}
+                  className="flex-1 bg-background border border-border rounded-lg px-4 py-2 text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                />
+                <Button type="submit" disabled={!inputMessage.trim() || isSending} size="sm">
+                  {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                </Button>
+              </form>
+            </div>
           </div>
         )}
       </div>

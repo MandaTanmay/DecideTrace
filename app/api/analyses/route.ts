@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ObjectId } from 'mongodb'
 import { verifyToken } from '@/lib/auth'
-import { getAnalysesCollection, toAnalysisListItem } from '@/models/Analysis'
+import { getAnalysesCollection, toAnalysisListItem, mapResultsForClient } from '@/models/Analysis'
 import { buildGraph } from '@/src/graph/graph'
 import type { AnalysisDocument, ConflictResult } from '@/models/Analysis'
 
@@ -57,30 +57,7 @@ function buildPastMeetingContext(
   return 'PAST MEETING DECISIONS AND CONFLICTS:\n\n' + sections.join('\n\n')
 }
 
-// ---------------------------------------------------------------------------
-// Helper: map internal model → UI-expected field names
-// ---------------------------------------------------------------------------
 
-function mapResultsForClient(results: AnalysisDocument['results']) {
-  return {
-    summary: results.summary,
-    decisions: results.decisions,
-    // Rename fields and convert confidence float → percentage integer
-    conflicts: results.conflicts.map((c: ConflictResult, idx: number) => ({
-      id: idx + 1,
-      meetingDecision: c.decision,
-      conflictingNote: c.contradictingNote,
-      confidence: Math.round(c.confidence * 100),
-      explanation: c.explanation,
-    })),
-    actionItems: results.actionItems,
-    // Rename knowledgeUpdates → knowledgeGaps with suggestedNote → suggestion
-    knowledgeGaps: results.knowledgeUpdates.map((u) => ({
-      topic: u.topic,
-      suggestion: u.suggestedNote,
-    })),
-  }
-}
 
 // ---------------------------------------------------------------------------
 // GET /api/analyses

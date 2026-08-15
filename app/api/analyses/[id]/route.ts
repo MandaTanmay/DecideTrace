@@ -8,32 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ObjectId } from 'mongodb'
 import { verifyToken } from '@/lib/auth'
-import { getAnalysesCollection } from '@/models/Analysis'
-import type { ConflictResult } from '@/models/Analysis'
-
-// ---------------------------------------------------------------------------
-// Helper: map internal model → UI-expected field names
-// (Duplicated from route.ts — acceptable for isolated route handlers)
-// ---------------------------------------------------------------------------
-
-function mapResultsForClient(results: any) {
-  return {
-    summary: results.summary,
-    decisions: results.decisions,
-    conflicts: (results.conflicts ?? []).map((c: ConflictResult, idx: number) => ({
-      id: idx + 1,
-      meetingDecision: c.decision,
-      conflictingNote: c.contradictingNote,
-      confidence: Math.round(c.confidence * 100),
-      explanation: c.explanation,
-    })),
-    actionItems: results.actionItems ?? [],
-    knowledgeGaps: (results.knowledgeUpdates ?? []).map((u: any) => ({
-      topic: u.topic,
-      suggestion: u.suggestedNote,
-    })),
-  }
-}
+import { getAnalysesCollection, mapResultsForClient } from '@/models/Analysis'
 
 // ---------------------------------------------------------------------------
 // GET /api/analyses/[id]

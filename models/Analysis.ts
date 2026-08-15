@@ -71,6 +71,28 @@ export interface AnalysisListItem {
 }
 
 /**
+ * Map internal AnalysisResults sub-document to client/UI format.
+ */
+export function mapResultsForClient(results: any) {
+  return {
+    summary: results?.summary || '',
+    decisions: results?.decisions || [],
+    conflicts: (results?.conflicts ?? []).map((c: ConflictResult, idx: number) => ({
+      id: idx + 1,
+      meetingDecision: c.decision,
+      conflictingNote: c.contradictingNote,
+      confidence: Math.round((c.confidence || 0) * 100),
+      explanation: c.explanation || '',
+    })),
+    actionItems: results?.actionItems ?? [],
+    knowledgeGaps: (results?.knowledgeUpdates ?? []).map((u: any) => ({
+      topic: u.topic || 'Unknown Topic',
+      suggestion: u.suggestedNote || '',
+    })),
+  }
+}
+
+/**
  * Convert a full AnalysisDocument to a sidebar list item.
  */
 export function toAnalysisListItem(doc: AnalysisDocument): AnalysisListItem {

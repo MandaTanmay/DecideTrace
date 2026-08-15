@@ -201,32 +201,23 @@ export function AnalysisForm({ onAnalysisComplete }: AnalysisFormProps) {
     setCompletedSteps([])
     setCurrentStep(1)
 
-    try {
-      const animationPromise = (async () => {
-        await new Promise(resolve => setTimeout(resolve, 3000))
-        setCompletedSteps([1])
-        setCurrentStep(2)
-        await new Promise(resolve => setTimeout(resolve, 500))
-        setCompletedSteps([1, 2])
-        setCurrentStep(3)
-        await new Promise(resolve => setTimeout(resolve, 8000))
-        setCompletedSteps([1, 2, 3])
-        setCurrentStep(4)
-        await new Promise(resolve => setTimeout(resolve, 5000))
-        setCompletedSteps([1, 2, 3, 4])
-        setCurrentStep(5)
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        setCompletedSteps([1, 2, 3, 4, 5])
-        setCurrentStep(6)
-      })()
+    let stepCounter = 1
+    const stepTimer = setInterval(() => {
+      if (stepCounter < 5) {
+        setCompletedSteps(prev => Array.from(new Set([...prev, stepCounter])))
+        stepCounter += 1
+        setCurrentStep(stepCounter)
+      }
+    }, 2500)
 
-      const apiPromise = fetch('/api/analyses', {
+    try {
+      const response = await fetch('/api/analyses', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ transcript, existingNotes: notes }),
       })
 
-      const [response] = await Promise.all([apiPromise, animationPromise])
+      clearInterval(stepTimer)
 
       if (!response.ok) {
         const error = await response.json()
@@ -235,11 +226,13 @@ export function AnalysisForm({ onAnalysisComplete }: AnalysisFormProps) {
 
       const data = await response.json()
 
+      setCurrentStep(6)
       setCompletedSteps([1, 2, 3, 4, 5, 6])
-      await new Promise(resolve => setTimeout(resolve, 500))
+      await new Promise(resolve => setTimeout(resolve, 400))
 
       onAnalysisComplete(data)
     } catch (error: any) {
+      clearInterval(stepTimer)
       console.error('Analysis error:', error)
       toast.error(error.message || 'Analysis failed. Please check your API keys and try again.')
     } finally {

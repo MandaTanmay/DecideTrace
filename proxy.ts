@@ -1,7 +1,7 @@
 /**
- * middleware.ts
+ * proxy.ts
  *
- * Next.js Edge Middleware for route protection.
+ * Next.js 16 Proxy Middleware for route protection.
  *
  * Protected routes:
  *  - /dashboard/**   → redirect to /login if no valid auth cookie
@@ -17,7 +17,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
 
 // Convert JWT_SECRET to a Uint8Array for jose (Edge runtime compatible)
-// Note: jsonwebtoken is Node.js-only; jose works in the Edge runtime used by middleware
 function getJwtSecret(): Uint8Array {
   const secret = process.env.JWT_SECRET
   if (!secret) throw new Error('JWT_SECRET is not set')

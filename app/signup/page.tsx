@@ -23,8 +23,23 @@ export default function SignupPage() {
     })
   }
 
+  const passwordChecks = {
+    length: formData.password.length >= 8,
+    upper: /[A-Z]/.test(formData.password),
+    number: /[0-9]/.test(formData.password),
+    special: /[!@#$%^&*(),.?":{}|<>]/.test(formData.password),
+  }
+
+  const isPasswordValid = passwordChecks.length && passwordChecks.upper && passwordChecks.number && passwordChecks.special
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!isPasswordValid) {
+      toast.error('Password must be at least 8 characters long and include an uppercase letter, a number, and a special character.')
+      return
+    }
+
     try {
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
@@ -109,9 +124,25 @@ export default function SignupPage() {
               placeholder="••••••••"
               className="w-full px-4 py-2 bg-card border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
             />
+            {formData.password && (
+              <div className="text-xs space-y-1 mt-3 p-3 bg-secondary/30 rounded-lg border border-border">
+                <p className={passwordChecks.length ? 'text-emerald-400 font-medium' : 'text-muted-foreground'}>
+                  {passwordChecks.length ? '✓' : '•'} At least 8 characters
+                </p>
+                <p className={passwordChecks.upper ? 'text-emerald-400 font-medium' : 'text-muted-foreground'}>
+                  {passwordChecks.upper ? '✓' : '•'} At least one uppercase letter (A-Z)
+                </p>
+                <p className={passwordChecks.number ? 'text-emerald-400 font-medium' : 'text-muted-foreground'}>
+                  {passwordChecks.number ? '✓' : '•'} At least one number (0-9)
+                </p>
+                <p className={passwordChecks.special ? 'text-emerald-400 font-medium' : 'text-muted-foreground'}>
+                  {passwordChecks.special ? '✓' : '•'} At least one special character (!@#$%^&*)
+                </p>
+              </div>
+            )}
           </div>
 
-          <Button type="submit" className="w-full">
+          <Button type="submit" className="w-full" disabled={formData.password.length > 0 && !isPasswordValid}>
             Create Account
           </Button>
         </form>

@@ -14,6 +14,8 @@ export interface UserDocument {
   email: string               // unique index — enforced in MongoDB Atlas
   passwordHash: string
   createdAt: Date
+  resetPasswordToken?: string
+  resetPasswordExpires?: Date
 }
 
 /**
