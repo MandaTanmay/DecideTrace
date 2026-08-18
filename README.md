@@ -1,4 +1,4 @@
-# MeetMind
+# DecideTrace
 
 > **AI-powered meeting intelligence** — paste a transcript, get instant conflict detection, action items, and knowledge gap suggestions powered by a 5-agent LangGraph pipeline.
 
